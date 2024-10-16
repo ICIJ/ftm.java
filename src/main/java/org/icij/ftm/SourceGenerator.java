@@ -18,7 +18,8 @@ public class SourceGenerator {
     private final Properties properties;
     private final Load yaml;
     private final Map<String, String> typeMapping = Map.of(
-            "name", "String"
+            "number", "int",
+            "url", "Url"
     );
 
     public SourceGenerator() {
@@ -42,7 +43,7 @@ public class SourceGenerator {
 
         Map<String, Object> property = (Map<String, Object>) properties.get(required.get(0));
         StringBuffer stringProperties = new StringBuffer();
-        stringProperties.append(ofNullable(typeMapping.get(property.get("type"))).orElse("Object"))
+        stringProperties.append(ofNullable(typeMapping.get(property.get("type"))).orElse("String"))
                 .append(" ")
                 .append(property.get("label").toString().toLowerCase(Locale.getDefault()));
 
