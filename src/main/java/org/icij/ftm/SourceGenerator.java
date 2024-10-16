@@ -40,7 +40,7 @@ public class SourceGenerator {
         Map<String, Object> modelDesc = (Map<String, Object>) model.get(modelName);
 
         Map<String, Object> properties = (Map<String, Object>) modelDesc.get("properties");
-        StringBuffer stringProperties = new StringBuffer();
+        StringBuilder stringProperties = new StringBuilder();
 
         List<String> required = (List<String>) modelDesc.get("required");
         for (String prop: required) {
