@@ -38,14 +38,20 @@ public class SourceGenerator {
         }
         String modelName = model.keySet().iterator().next();
         Map<String, Object> modelDesc = (Map<String, Object>) model.get(modelName);
-        List<String> required = (List<String>) modelDesc.get("required");
-        Map<String, Object> properties = (Map<String, Object>) modelDesc.get("properties");
 
-        Map<String, Object> property = (Map<String, Object>) properties.get(required.get(0));
+        Map<String, Object> properties = (Map<String, Object>) modelDesc.get("properties");
         StringBuffer stringProperties = new StringBuffer();
-        stringProperties.append(ofNullable(typeMapping.get(property.get("type"))).orElse("String"))
-                .append(" ")
-                .append(property.get("label").toString().toLowerCase(Locale.getDefault()));
+
+        List<String> required = (List<String>) modelDesc.get("required");
+        for (String prop: required) {
+            Map<String, Object> property = (Map<String, Object>) properties.get(prop);
+            stringProperties.append(ofNullable(typeMapping.get(property.get("type"))).orElse("String"))
+                    .append(" ")
+                    .append(property.get("label").toString().toLowerCase(Locale.getDefault()));
+            if (!prop.equals(required.get(required.size() - 1))) {
+                stringProperties.append(", ");
+            }
+        }
 
         return format("""
                 package org.icij.ftm;

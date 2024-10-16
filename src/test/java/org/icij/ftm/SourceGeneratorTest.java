@@ -28,6 +28,12 @@ public class SourceGeneratorTest {
         assertThat(new SourceGenerator().generate(path)).contains("public record Int(int number);");
     }
 
+    @Test
+    public void test_generate_with_two_props() throws IOException {
+        Path path = getPath("TwoProps.yaml");
+        assertThat(new SourceGenerator().generate(path)).contains("public record TwoProps(String name, int number);");
+    }
+
     private static Path getPath(String name) {
         return Paths.get(ClassLoader.getSystemResource(name).getPath());
     }

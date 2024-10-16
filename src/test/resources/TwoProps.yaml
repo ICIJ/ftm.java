@@ -1,0 +1,11 @@
+TwoProps:
+  required:
+    - name
+    - number
+  properties:
+    number:
+      label: Number
+      type: number
+    name:
+      label: Name
+      type: name
