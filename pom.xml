@@ -19,6 +19,7 @@
         <maven-compiler.version>3.5.1</maven-compiler.version>
         <maven-javadoc.version>2.10.4</maven-javadoc.version>
         <maven-jar.version>3.2.0</maven-jar.version>
+        <jackson.version>2.17.1</jackson.version>
     </properties>
     <dependencies>
         <!-- Slf4j -->
@@ -32,6 +33,17 @@
             <groupId>org.snakeyaml</groupId>
             <artifactId>snakeyaml-engine</artifactId>
             <version>2.7</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <!-- tests -->
