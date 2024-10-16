@@ -1,0 +1,7 @@
+Int:
+  required:
+    - number
+  properties:
+    number:
+      label: Number
+      type: number
