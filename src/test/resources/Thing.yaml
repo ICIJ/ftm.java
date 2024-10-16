@@ -1,0 +1,93 @@
+Thing:
+  abstract: true
+  matchable: false
+  featured:
+    - name
+    - country
+  required:
+    - name
+  caption:
+    - name
+  properties:
+    name:
+      label: Name
+      type: name
+      rdf: http://www.w3.org/2004/02/skos/core#prefLabel
+    summary: # a short one-liner kind of description
+      label: Summary
+      type: text
+    description: # a longer description
+      label: Description
+      type: text
+    country:
+      label: Country
+      type: country
+    alias:
+      label: Other name
+      type: name
+      rdf: http://www.w3.org/2004/02/skos/core#altLabel
+    previousName:
+      label: Previous name
+      type: name
+    weakAlias:
+      label: Weak alias
+      type: name
+      matchable: false
+    sourceUrl:
+      label: Source link
+      type: url
+      matchable: false
+    publisher:
+      label: "Publishing source"
+      matchable: false
+    publisherUrl:
+      label: "Publishing source URL"
+      type: url
+      matchable: false
+    wikipediaUrl:
+      label: Wikipedia Article
+      type: url
+    wikidataId:
+      label: Wikidata ID
+      type: identifier
+      format: qid
+      maxLength: 32
+    keywords:
+      label: Keywords
+    topics:
+      label: Topics
+      type: topic
+    address:
+      label: Address
+      type: address
+    addressEntity:
+      label: Address
+      reverse:
+        name: things
+        label: "Located there"
+      type: entity
+      range: Address
+    program: # Used by sanctions
+      label: Program
+    notes:
+      label: Notes
+      type: text
+    proof:
+      label: Source document
+      reverse:
+        name: proven
+        label: "Derived entities"
+      type: entity
+      range: Document
+    createdAt:
+      label: "Created at"
+      type: date
+      matchable: false
+    modifiedAt:
+      label: "Modified on"
+      type: date
+      matchable: false
+    retrievedAt:
+      label: "Retrieved on"
+      type: date
+      matchable: false
