@@ -58,7 +58,7 @@ public class SourceGenerator {
             return format("""
                 package org.icij.ftm;
                 
-                public record %s(%s);
+                public record %s(%s) {};
                 """, modelName, stringProperties);
         } else {
             return format("""
