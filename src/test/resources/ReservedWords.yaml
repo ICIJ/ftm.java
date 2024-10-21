@@ -1,0 +1,6 @@
+ReservedWords:
+  required:
+    - case
+  properties:
+    case:
+      type: string

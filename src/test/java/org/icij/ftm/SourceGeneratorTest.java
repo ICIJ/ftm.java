@@ -61,6 +61,13 @@ public class SourceGeneratorTest {
                 "public record CallForTenders(String title, LegalEntity authority) implements Thing, Interval {};");
     }
 
+    @Test
+    public void test_feat_remove_reserved_words() throws IOException {
+        Path path = getPath("ReservedWords.yaml");
+        assertThat(new SourceGenerator().generate(path)).contains(
+                "public record ReservedWords(String caze) {};");
+    }
+
     private static Path getPath(String name) {
         return Paths.get(ClassLoader.getSystemResource(name).getPath());
     }

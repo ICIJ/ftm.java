@@ -24,6 +24,9 @@ public class SourceGenerator {
             "number", "int",
             "url", "Url"
     );
+    private final Map<String, String> jvmReservedWords = Map.of(
+            "case", "caze"
+    );
 
     public SourceGenerator() {
         this(new Properties());
@@ -54,13 +57,13 @@ public class SourceGenerator {
                     if ("entity".equals(property.get("type"))) {
                         stringProperties.append(ofNullable(property.get("range")).orElse("String"))
                                 .append(" ")
-                                .append(prop);
+                                .append(sanitizedProp(prop));
                     } else {
                         // should have a type but CallForTenders.title has no type
                         String type = (String) ofNullable(property.get("type")).orElse("");
                         stringProperties.append(ofNullable(nativeTypeMapping.get(type)).orElse("String"))
                                 .append(" ")
-                                .append(prop);
+                                .append(sanitizedProp(prop));
                     }
                 } else {
                     // it seems that there are some fields that are not listed but in the required list
@@ -87,5 +90,9 @@ public class SourceGenerator {
                 public interface %s {};
                 """, modelName);
         }
+    }
+
+    private String sanitizedProp(String prop) {
+        return ofNullable(jvmReservedWords.get(prop)).orElse(prop);
     }
 }
