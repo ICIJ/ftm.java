@@ -44,11 +44,17 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         Path destDir = Path.of("target", "generated-sources", "org", "icij", "ftm");
-
+        destDir.toFile().mkdirs();
         Path yamlFiles = new Main().getSourceFiles();
         for (File yamlFile: Objects.requireNonNull(yamlFiles.toFile().listFiles())) {
             String javaSource = new SourceGenerator().generate(yamlFile.toPath());
-            Files.writeString(destDir.resolve(yamlFile.toPath().getFileName()), javaSource);
+            Files.writeString(destDir.resolve(getJavaFileName(yamlFile)), javaSource);
         }
+    }
+
+    private static String getJavaFileName(File yamlFile) {
+        int dotIndex = yamlFile.getName().lastIndexOf('.');
+        String name = yamlFile.getName().substring(0, dotIndex);
+        return name + ".java";
     }
 }

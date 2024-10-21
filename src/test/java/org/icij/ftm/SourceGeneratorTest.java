@@ -34,6 +34,12 @@ public class SourceGeneratorTest {
         assertThat(new SourceGenerator().generate(path)).contains("public record TwoProps(String name, int number);");
     }
 
+    @Test
+    public void test_generate_abstract() throws IOException {
+        Path path = getPath("Analyzable.yaml");
+        assertThat(new SourceGenerator().generate(path)).contains("public interface Analyzable {};");
+    }
+
     private static Path getPath(String name) {
         return Paths.get(ClassLoader.getSystemResource(name).getPath());
     }

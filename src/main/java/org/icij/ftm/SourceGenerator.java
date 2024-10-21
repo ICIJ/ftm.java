@@ -43,19 +43,29 @@ public class SourceGenerator {
         StringBuilder stringProperties = new StringBuilder();
 
         List<String> required = (List<String>) modelDesc.get("required");
-        for (String prop: required) {
-            Map<String, Object> property = (Map<String, Object>) properties.get(prop);
-            stringProperties.append(ofNullable(typeMapping.get(property.get("type"))).orElse("String"))
-                    .append(" ")
-                    .append(property.get("label").toString().toLowerCase(Locale.getDefault()));
-            if (!prop.equals(required.get(required.size() - 1))) {
-                stringProperties.append(", ");
+        if (required != null) {
+            for (String prop : required) {
+                Map<String, Object> property = (Map<String, Object>) ofNullable(properties).map(p -> p.get(prop)).orElse(null);
+                if (property != null) {
+                    stringProperties.append(ofNullable(typeMapping.get(property.get("type"))).orElse("String"))
+                            .append(" ")
+                            .append(property.get("label").toString().toLowerCase(Locale.getDefault()));
+                }
+                if (!prop.equals(required.get(required.size() - 1))) {
+                    stringProperties.append(", ");
+                }
             }
-        }
-
-        return format("""
+            return format("""
                 package org.icij.ftm;
+                
                 public record %s(%s);
                 """, modelName, stringProperties);
+        } else {
+            return format("""
+                package org.icij.ftm;
+                
+                public interface %s {};
+                """, modelName);
+        }
     }
 }
