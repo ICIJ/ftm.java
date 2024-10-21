@@ -54,6 +54,13 @@ public class SourceGeneratorTest {
                 "public record Occupancy(Person holder, Position post) implements Interval {};");
     }
 
+    @Test
+    public void test_fix_call_for_tender() throws IOException {
+        Path path = getPath("CallForTenders.yaml");
+        assertThat(new SourceGenerator().generate(path)).contains(
+                "public record CallForTenders(String title, LegalEntity authority) implements Thing, Interval {};");
+    }
+
     private static Path getPath(String name) {
         return Paths.get(ClassLoader.getSystemResource(name).getPath());
     }

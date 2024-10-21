@@ -1,5 +1,7 @@
 package org.icij.ftm;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.snakeyaml.engine.v2.api.Load;
 import org.snakeyaml.engine.v2.api.LoadSettings;
 
@@ -15,6 +17,7 @@ import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
 public class SourceGenerator {
+    private Logger logger = LoggerFactory.getLogger(getClass());
     private final Properties properties;
     private final Load yaml;
     private final Map<String, String> nativeTypeMapping = Map.of(
@@ -32,6 +35,7 @@ public class SourceGenerator {
     }
 
     public String generate(Path path) throws IOException {
+        logger.info("generating java class for {} model", path.getFileName());
         Map<String, Object> model = (Map<String, Object>) yaml.loadFromInputStream(new FileInputStream(path.toFile()));
         if (model.size() > 1) {
             throw new IllegalStateException(format("model should contain one definition, found %s", model.keySet()));
@@ -52,7 +56,9 @@ public class SourceGenerator {
                                 .append(" ")
                                 .append(prop);
                     } else {
-                        stringProperties.append(ofNullable(nativeTypeMapping.get(property.get("type"))).orElse("String"))
+                        // should have a type but CallForTenders.title has no type
+                        String type = (String) ofNullable(property.get("type")).orElse("");
+                        stringProperties.append(ofNullable(nativeTypeMapping.get(type)).orElse("String"))
                                 .append(" ")
                                 .append(prop);
                     }
