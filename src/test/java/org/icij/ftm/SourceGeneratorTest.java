@@ -44,14 +44,14 @@ public class SourceGeneratorTest {
     public void test_bug_missing_first_prop() throws IOException {
         Path path = getPath("Message.yaml");
         assertThat(new SourceGenerator().generate(path)).contains(
-                "public record Message(String bodyText, String sender) implements Interval, Folder, PlainText, HyperText {};");
+                "public record Message(String bodyText, LegalEntity sender) implements Interval, Folder, PlainText, HyperText {};");
     }
 
     @Test
     public void test_fix_occupancy() throws IOException {
         Path path = getPath("Occupancy.yaml");
         assertThat(new SourceGenerator().generate(path)).contains(
-                "public record Occupancy(String holder, String post) implements Interval {};");
+                "public record Occupancy(Person holder, Position post) implements Interval {};");
     }
 
     private static Path getPath(String name) {

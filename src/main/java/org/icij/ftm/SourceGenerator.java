@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
@@ -18,7 +17,7 @@ import static java.util.Optional.ofNullable;
 public class SourceGenerator {
     private final Properties properties;
     private final Load yaml;
-    private final Map<String, String> typeMapping = Map.of(
+    private final Map<String, String> nativeTypeMapping = Map.of(
             "number", "int",
             "url", "Url"
     );
@@ -48,9 +47,15 @@ public class SourceGenerator {
             for (String prop : required) {
                 Map<String, Object> property = (Map<String, Object>) ofNullable(properties).map(p -> p.get(prop)).orElse(null);
                 if (property != null) {
-                    stringProperties.append(ofNullable(typeMapping.get(property.get("type"))).orElse("String"))
-                            .append(" ")
-                            .append(prop);
+                    if ("entity".equals(property.get("type"))) {
+                        stringProperties.append(ofNullable(property.get("range")).orElse("String"))
+                                .append(" ")
+                                .append(prop);
+                    } else {
+                        stringProperties.append(ofNullable(nativeTypeMapping.get(property.get("type"))).orElse("String"))
+                                .append(" ")
+                                .append(prop);
+                    }
                 } else {
                     // it seems that there are some fields that are not listed but in the required list
                     // we should do a PR to fix that but for now we are putting a String property
