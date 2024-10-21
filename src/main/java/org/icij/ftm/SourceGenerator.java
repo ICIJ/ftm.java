@@ -6,6 +6,7 @@ import org.snakeyaml.engine.v2.api.LoadSettings;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -49,17 +50,25 @@ public class SourceGenerator {
                 if (property != null) {
                     stringProperties.append(ofNullable(typeMapping.get(property.get("type"))).orElse("String"))
                             .append(" ")
-                            .append(property.get("label").toString().toLowerCase(Locale.getDefault()));
+                            .append(prop);
+                } else {
+                    // it seems that there are some fields that are not listed but in the required list
+                    // we should do a PR to fix that but for now we are putting a String property
+                    stringProperties.append(format("String %s", prop));
                 }
                 if (!prop.equals(required.get(required.size() - 1))) {
                     stringProperties.append(", ");
                 }
             }
+
+            List<String> extendz = (List<String>) ofNullable(modelDesc.get("extends")).orElse(new ArrayList());
+            String implementList = extendz.isEmpty() ? "" : format("implements %s " , String.join(", ", extendz));
+
             return format("""
                 package org.icij.ftm;
                 
-                public record %s(%s) {};
-                """, modelName, stringProperties);
+                public record %s(%s) %s{};
+                """, modelName, stringProperties, implementList);
         } else {
             return format("""
                 package org.icij.ftm;
