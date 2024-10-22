@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -23,7 +24,8 @@ import static java.util.Optional.ofNullable;
 public class SourceGenerator {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Properties properties;
-    private static final Load yaml = new Load(LoadSettings.builder().build());;
+    private static final Load yaml = new Load(LoadSettings.builder().build());
+    ;
     private final Map<String, String> nativeTypeMapping = Map.of(
             "number", "int",
             "url", "Url"
@@ -60,8 +62,26 @@ public class SourceGenerator {
             String inheritanceString = getInheritanceString(extendz, parents);
 
             StringBuilder classAttributes = new StringBuilder();
-            String classAttributesAssignation = required.stream().map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
-            for (String prop : required) {
+            String classAttributesAssignation = getConstructor(required, extendz, parents);
+
+            for (String prop: getParentAttributes(extendz, parents)) {
+                Map<String, Object> property = (Map<String, Object>) ((Map<String, Object>)parents.get(getParent(extendz, parents).get()).get("properties")).get(prop);
+                if (property != null) {
+                    if ("entity".equals(property.get("type"))) {
+                        stringProperties.append(ofNullable(property.get("range")).orElse("String"))
+                                .append(" ")
+                                .append(sanitizedProp(prop));
+                    } else {
+                        // should have a type but CallForTenders.title has no type
+                        String type = (String) ofNullable(property.get("type")).orElse("");
+                        stringProperties.append(ofNullable(nativeTypeMapping.get(type)).orElse("String"))
+                                .append(" ")
+                                .append(sanitizedProp(prop));
+                    }
+                    stringProperties.append(", ");
+                }
+            }
+            for (String prop: required) {
                 Map<String, Object> property = (Map<String, Object>) ofNullable(properties).map(p -> p.get(prop)).orElse(null);
                 if (property != null) {
                     if ("entity".equals(property.get("type"))) {
@@ -113,23 +133,45 @@ public class SourceGenerator {
             }
         } else {
             return format("""
-                package org.icij.ftm;
-                
-                public interface %s {};
-                """, modelName);
+                    package org.icij.ftm;
+                                    
+                    public interface %s {};
+                    """, modelName);
         }
+    }
+
+    private static String getConstructor(List<String> required, List<String> extendz, Map<String, Map<String, Object>> parents) {
+        List<String> parentAttributes = getParentAttributes(extendz, parents);
+        if (!parentAttributes.isEmpty()) {
+            return format("super(%s);\n", String.join(",", parentAttributes)) + required.stream().filter(a -> !parentAttributes.contains(a)).map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
+        } else {
+            return required.stream().map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
+        }
+    }
+
+    private static List<String> getParentAttributes(List<String> extendz, Map<String, Map<String, Object>> parents) {
+        Optional<String> parent = getParent(extendz, parents);
+        if (parent.isPresent()) {
+            return (List<String>) parents.getOrDefault(parent.get(), new HashMap<>()).get("required");
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    private static Optional<String> getParent(List<String> extendz, Map<String, Map<String, Object>> parents) {
+        return extendz.stream().filter(p -> parents.getOrDefault(p, new HashMap<>()).get("required") != null).findFirst();
     }
 
     private static String getInheritanceString(List<String> extendz, Map<String, Map<String, Object>> parents) {
         List<String> extendsList = extendz.stream().filter(p -> parents.getOrDefault(p, new HashMap<>()).get("required") != null).collect(Collectors.toList());
         List<String> implementsList = extendz.stream().filter(p -> parents.getOrDefault(p, new HashMap<>()).get("required") == null).collect(Collectors.toList());
-        String extendsString = extendsList.isEmpty() ? "": format("extends %s ", String.join(", ", extendsList));
-        String implementsString = implementsList.isEmpty() ? "": format("implements %s ", String.join(", ", implementsList));
+        String extendsString = extendsList.isEmpty() ? "" : format("extends %s ", String.join(", ", extendsList));
+        String implementsString = implementsList.isEmpty() ? "" : format("implements %s ", String.join(", ", implementsList));
         return extendz.isEmpty() ? "" : extendsString + implementsString;
     }
 
     static Map<String, Object> getYamlContent(File yamlFile) throws FileNotFoundException {
-        return (Map<String, Object>)yaml.loadFromInputStream(new FileInputStream(yamlFile));
+        return (Map<String, Object>) yaml.loadFromInputStream(new FileInputStream(yamlFile));
     }
 
     private String sanitizedProp(String prop) {

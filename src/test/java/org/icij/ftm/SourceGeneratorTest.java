@@ -39,6 +39,20 @@ public class SourceGeneratorTest {
     }
 
     @Test
+    public void test_call_super_in_daughter_class() throws IOException {
+        Path path = getPath("CallForTenders.yaml");
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Map.of(
+                "Thing", Map.of("required", List.of("name"), "properties", Map.of("name", Map.of("type", "name")))),
+                "Interval", Map.of()
+        )));
+        assertThat(sourceGenerator.generate(path)).contains("extends Thing");
+        assertThat(sourceGenerator.generate(path)).contains("super(name);");
+        assertThat(sourceGenerator.generate(path)).contains("public CallForTenders (String name, String title, LegalEntity authority) {");
+        assertThat(sourceGenerator.generate(path)).contains("this.title = title;");
+        assertThat(sourceGenerator.generate(path)).contains("this.authority = authority;");
+    }
+
+    @Test
     public void test_generate_with_int_property() throws IOException {
         Path path = getPath("Int.yaml");
         assertThat(new SourceGenerator().generate(path)).contains("public record Int(int number) {};");
