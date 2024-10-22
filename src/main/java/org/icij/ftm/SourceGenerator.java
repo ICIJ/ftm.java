@@ -64,7 +64,10 @@ public class SourceGenerator {
             StringBuilder classAttributes = new StringBuilder();
             String classAttributesAssignation = getConstructor(required, extendz, parents);
 
-            for (String prop: getParentAttributes(extendz, parents)) {
+            List<String> parentAttributes = getParentAttributes(extendz, parents);
+            List<String> modelAttributes = required.stream().filter(a -> !parentAttributes.contains(a)).collect(Collectors.toList());
+
+            for (String prop: parentAttributes) {
                 Map<String, Object> property = (Map<String, Object>) ((Map<String, Object>)parents.get(getParent(extendz, parents).get()).get("properties")).get(prop);
                 if (property != null) {
                     if ("entity".equals(property.get("type"))) {
@@ -78,10 +81,12 @@ public class SourceGenerator {
                                 .append(" ")
                                 .append(sanitizedProp(prop));
                     }
-                    stringProperties.append(", ");
+                    if (!prop.equals(required.get(required.size() - 1)) || !modelAttributes.isEmpty()) {
+                        stringProperties.append(", ");
+                    }
                 }
             }
-            for (String prop: required) {
+            for (String prop: modelAttributes) {
                 Map<String, Object> property = (Map<String, Object>) ofNullable(properties).map(p -> p.get(prop)).orElse(null);
                 if (property != null) {
                     if ("entity".equals(property.get("type"))) {
@@ -108,7 +113,7 @@ public class SourceGenerator {
                     // we should do a PR to fix that but for now we are putting a String property
                     stringProperties.append(format("String %s", prop));
                 }
-                if (!prop.equals(required.get(required.size() - 1))) {
+                if (!prop.equals(modelAttributes.get(modelAttributes.size() - 1))) {
                     stringProperties.append(", ");
                 }
             }

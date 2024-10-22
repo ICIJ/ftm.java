@@ -1,0 +1,40 @@
+Passport:
+  label: "Passport"
+  plural: "Passports"
+  description: >
+    An passport held by a person.
+  extends:
+    - Identification
+  matchable: false
+  featured:
+    - passportNumber
+    - country
+    - type
+    - holder
+    - startDate
+    - endDate
+  required:
+    - holder
+    - passportNumber
+    - number
+  caption:
+    - passportNumber
+    - number
+  properties:
+    passportNumber:
+      label: "Passport number"
+      type: identifier
+    surname:
+      label: "Surname"
+    givenName:
+      label: "Given name"
+    birthDate:
+      label: "Birth date"
+      type: date
+    birthPlace:
+      label: "Place of birth"
+    gender:
+      label: "Gender"
+    personalNumber:
+      label: "Personal number"
+      type: identifier

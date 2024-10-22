@@ -42,7 +42,7 @@ public class SourceGeneratorTest {
     public void test_call_super_in_daughter_class() throws IOException {
         Path path = getPath("CallForTenders.yaml");
         SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Map.of(
-                "Thing", Map.of("required", List.of("name"), "properties", Map.of("name", Map.of("type", "name")))),
+                        "Thing", Map.of("required", List.of("name"), "properties", Map.of("name", Map.of("type", "name")))),
                 "Interval", Map.of()
         )));
         assertThat(sourceGenerator.generate(path)).contains("extends Thing");
@@ -50,6 +50,29 @@ public class SourceGeneratorTest {
         assertThat(sourceGenerator.generate(path)).contains("public CallForTenders (String name, String title, LegalEntity authority) {");
         assertThat(sourceGenerator.generate(path)).contains("this.title = title;");
         assertThat(sourceGenerator.generate(path)).contains("this.authority = authority;");
+    }
+
+    @Test
+    public void test_call_super_in_daughter_class_should_not_define_parent_property() throws IOException {
+        Path path = getPath("LegalEntity.yaml");
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Map.of(
+                "Thing", Map.of("required", List.of("name"), "properties", Map.of("name", Map.of("type", "name"))))
+        )));
+        assertThat(sourceGenerator.generate(path)).contains("public LegalEntity (String name) {");
+        assertThat(sourceGenerator.generate(path)).contains("super(name);");
+        assertThat(sourceGenerator.generate(path)).doesNotContain("this.name = name;");
+    }
+
+    @Test
+    public void test_password_bug() throws IOException {
+        Path path = getPath("Passport.yaml");
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Map.of(
+                "Identification", Map.of("required", List.of("holder", "number"),
+                        "properties", Map.of(
+                                "holder", Map.of("type", "entity", "range", "LegalEntity"),
+                                "number", Map.of("type", "identifier"))))
+        )));
+        assertThat(sourceGenerator.generate(path)).contains("public Passport (LegalEntity holder, String number, String passportNumber) {");
     }
 
     @Test
