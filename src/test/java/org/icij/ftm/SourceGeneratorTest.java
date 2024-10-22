@@ -6,8 +6,13 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
+import static java.util.Map.of;
 import static org.fest.assertions.Assertions.assertThat;
+import static org.icij.ftm.Utils.propertiesFromMap;
 
 public class SourceGeneratorTest {
     @Test(expected = IllegalStateException.class)
@@ -20,6 +25,17 @@ public class SourceGeneratorTest {
         Path path = getPath("Thing.yaml");
         assertThat(new SourceGenerator().generate(path)).contains("package org.icij.ftm;");
         assertThat(new SourceGenerator().generate(path)).contains("public record Thing(String name) {};");
+    }
+
+    @Test
+    public void test_generate_thing_with_thing_in_properties() throws IOException {
+        Path path = getPath("Thing.yaml");
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Map.of("Thing", Map.of()))));
+        assertThat(sourceGenerator.generate(path)).contains("package org.icij.ftm;");
+        assertThat(sourceGenerator.generate(path)).contains("public class Thing {");
+        assertThat(sourceGenerator.generate(path)).contains("final String name;");
+        assertThat(sourceGenerator.generate(path)).contains("public Thing (String name) {");
+        assertThat(sourceGenerator.generate(path)).contains("this.name = name;");
     }
 
     @Test
