@@ -56,19 +56,19 @@ public class SourceGenerator {
         Map<String, Object> properties = (Map<String, Object>) modelDesc.get("properties");
         StringBuilder stringProperties = new StringBuilder();
 
-        List<String> required = (List<String>) modelDesc.get("required");
-        if (required != null) {
+        List<String> required = getRequired(modelDesc);
+        if (!required.isEmpty()) {
             List<String> extendz = (List<String>) ofNullable(modelDesc.get("extends")).orElse(new ArrayList());
             String inheritanceString = getInheritanceString(extendz, parents);
 
             StringBuilder classAttributes = new StringBuilder();
-            String classAttributesAssignation = getConstructor(required, extendz, parents);
+            String classAttributesAssignation = getConstructor(modelDesc, parents);
 
-            List<String> parentAttributes = getParentAttributes(extendz, parents);
+            List<String> parentAttributes = getParentsAttributes(modelDesc, parents);
             List<String> modelAttributes = required.stream().filter(a -> !parentAttributes.contains(a)).collect(Collectors.toList());
 
             for (String prop: parentAttributes) {
-                Map<String, Object> property = (Map<String, Object>) ((Map<String, Object>)parents.get(getParent(extendz, parents).get()).get("properties")).get(prop);
+                Map<String, Object> property = getProperty(prop, modelDesc, parents);
                 if (property != null) {
                     if ("entity".equals(property.get("type"))) {
                         stringProperties.append(ofNullable(property.get("range")).orElse("String"))
@@ -145,8 +145,19 @@ public class SourceGenerator {
         }
     }
 
-    private static String getConstructor(List<String> required, List<String> extendz, Map<String, Map<String, Object>> parents) {
-        List<String> parentAttributes = getParentAttributes(extendz, parents);
+    private static Map<String, Object> getProperty(String prop, Map<String, Object> model, Map<String, Map<String, Object>> parents) {
+        Map<String, Object> property = (Map<String, Object>) ((Map<String, Object>) ofNullable(model.get("properties")).orElse(new HashMap<>())).get(prop);
+        if (property == null) {
+            Optional<String> parent = getParent(getExtends(model), parents);
+            return parent.map(s -> getProperty(prop, parents.get(s), parents)).orElse(null);
+        } else {
+            return property;
+        }
+    }
+
+    private static String getConstructor(Map<String, Object> model, Map<String, Map<String, Object>> parents) {
+        List<String> parentAttributes = getParentsAttributes(model, parents);
+        List<String> required = getRequired(model);
         if (!parentAttributes.isEmpty()) {
             return format("super(%s);\n", String.join(",", parentAttributes)) + required.stream().filter(a -> !parentAttributes.contains(a)).map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
         } else {
@@ -154,13 +165,21 @@ public class SourceGenerator {
         }
     }
 
-    private static List<String> getParentAttributes(List<String> extendz, Map<String, Map<String, Object>> parents) {
-        Optional<String> parent = getParent(extendz, parents);
+    private static List<String> getRequired(Map<String, Object> model) {
+        return (List<String>) ofNullable(model.get("required")).orElse(new ArrayList<>());
+    }
+
+    private static List<String> getParentsAttributes(Map<String, Object> model, Map<String, Map<String, Object>> parents) {
+        Optional<String> parent = getParent(getExtends(model), parents);
         if (parent.isPresent()) {
             return (List<String>) parents.getOrDefault(parent.get(), new HashMap<>()).get("required");
         } else {
             return new ArrayList<>();
         }
+    }
+
+    private static List<String> getExtends(Map<String, Object> model) {
+        return (List<String>) model.getOrDefault("extends", new ArrayList<>());
     }
 
     private static Optional<String> getParent(List<String> extendz, Map<String, Map<String, Object>> parents) {

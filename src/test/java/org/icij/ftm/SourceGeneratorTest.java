@@ -3,12 +3,12 @@ package org.icij.ftm;
 
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static java.util.Map.of;
 import static org.fest.assertions.Assertions.assertThat;
@@ -64,7 +64,7 @@ public class SourceGeneratorTest {
     }
 
     @Test
-    public void test_password_bug() throws IOException {
+    public void test_passport_bug() throws IOException {
         Path path = getPath("Passport.yaml");
         SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Map.of(
                 "Identification", Map.of("required", List.of("holder", "number"),
@@ -105,6 +105,17 @@ public class SourceGeneratorTest {
         Path path = getPath("Occupancy.yaml");
         assertThat(new SourceGenerator().generate(path)).contains(
                 "public record Occupancy(Person holder, Position post) implements Interval {};");
+    }
+
+    @Test
+    public void test_two_levels_inheritance() throws IOException {
+        Path path = getPath("Organization.yaml");
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Main.findParents(new File[]{
+                getPath("LegalEntity.yaml").toFile(),
+                getPath("Organization.yaml").toFile(),
+                getPath("Thing.yaml").toFile()}))));
+        assertThat(sourceGenerator.generate(path)).contains(
+                "public Organization (String name) {");
     }
 
     @Test

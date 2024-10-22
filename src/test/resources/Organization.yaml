@@ -1,0 +1,29 @@
+Organization:
+  extends:
+    - LegalEntity
+  label: Organization
+  plural: Organizations
+  description: >
+    Any type of incorporated entity that cannot be owned by another (see Company). This
+    might include charities, foundations or state-owned enterprises, depending on their
+    jurisdiction.
+  matchable: true
+  featured:
+    - name
+    - country
+    - legalForm
+    - status
+  required:
+    - name
+  caption:
+    - name
+  properties:
+    cageCode:
+      label: CAGE
+      description: Commercial and Government Entity Code (CAGE)
+      type: identifier
+    permId:
+      label: PermID
+      description: LSEG/Refinitiv code for a company
+      type: identifier
+      maxLength: 16
