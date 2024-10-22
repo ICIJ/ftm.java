@@ -132,6 +132,19 @@ public class SourceGeneratorTest {
                 "public record ReservedWords(String caze) {};");
     }
 
+    @Test
+    public void test_license_bug() throws Exception {
+        Path path = getPath("License.yaml");
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Main.findParents(new File[]{
+                getPath("License.yaml").toFile(),
+                getPath("Contract.yaml").toFile(),
+                getPath("Asset.yaml").toFile()}))));
+        assertThat(sourceGenerator.generate(path)).contains(
+                "public License (String title, String name, LegalEntity authority)");
+        assertThat(sourceGenerator.generate(path)).contains("final LegalEntity authority;");
+        assertThat(sourceGenerator.generate(path)).contains("final String name;");
+    }
+
     private static Path getPath(String name) {
         return Paths.get(ClassLoader.getSystemResource(name).getPath());
     }

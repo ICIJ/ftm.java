@@ -53,7 +53,6 @@ public class SourceGenerator {
         Map<String, Map<String, Object>> parents = (Map<String, Map<String, Object>>)
                 ofNullable(this.properties.get("parents")).orElse(new HashMap<>());
 
-        Map<String, Object> properties = (Map<String, Object>) modelDesc.get("properties");
         StringBuilder stringProperties = new StringBuilder();
 
         List<String> required = getRequired(modelDesc);
@@ -87,7 +86,7 @@ public class SourceGenerator {
                 }
             }
             for (String prop: modelAttributes) {
-                Map<String, Object> property = (Map<String, Object>) ofNullable(properties).map(p -> p.get(prop)).orElse(null);
+                Map<String, Object> property = getProperty(prop, modelDesc, parents);
                 if (property != null) {
                     if ("entity".equals(property.get("type"))) {
                         stringProperties.append(ofNullable(property.get("range")).orElse("String"))

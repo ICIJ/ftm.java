@@ -29,7 +29,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.icij.ftm.Utils.propertiesFromMap;
 
 public class Main {
-    public static final String SCHEMA_URL = "https://api.github.com/repos/alephdata/followthemoney/contents/followthemoney/schema";
+    public static final String SCHEMA_URL = "https://api.github.com/repos/ICIJ/followthemoney/contents/followthemoney/schema";
 
     Path downloadYamlModels() throws IOException, InterruptedException {
         Path tempDirectory = Files.createTempDirectory("ftm.java");
