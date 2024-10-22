@@ -26,11 +26,11 @@ public class SourceGenerator {
     private final Properties properties;
     private static final Load yaml = new Load(LoadSettings.builder().build());
     ;
-    private final Map<String, String> nativeTypeMapping = Map.of(
+    private static final Map<String, String> nativeTypeMapping = Map.of(
             "number", "int",
             "url", "Url"
     );
-    private final Map<String, String> jvmReservedWords = Map.of(
+    private static final Map<String, String> jvmReservedWords = Map.of(
             "case", "caze"
     );
 
@@ -53,69 +53,18 @@ public class SourceGenerator {
         Map<String, Map<String, Object>> parents = (Map<String, Map<String, Object>>)
                 ofNullable(this.properties.get("parents")).orElse(new HashMap<>());
 
-        StringBuilder stringProperties = new StringBuilder();
-
         List<String> required = getRequired(modelDesc);
         if (!required.isEmpty()) {
             List<String> extendz = (List<String>) ofNullable(modelDesc.get("extends")).orElse(new ArrayList());
             String inheritanceString = getInheritanceString(extendz, parents);
 
-            StringBuilder classAttributes = new StringBuilder();
+            List<String> parentsAttributes = getParentsAttributes(modelDesc, parents);
+            List<String> modelAttributes = required.stream().filter(a -> !parentsAttributes.contains(a)).toList();
+
+            String parentsStringProperties = new AttributeHandlerForSignature(modelDesc, parents).generateFor(parentsAttributes);
+            String stringProperties = new AttributeHandlerForSignature(modelDesc, parents).generateFor(modelAttributes);
+            String classAttributes = new AttributeHandlerForAttrs(modelDesc, parents).generateFor(modelAttributes);
             String classAttributesAssignation = getConstructor(modelDesc, parents);
-
-            List<String> parentAttributes = getParentsAttributes(modelDesc, parents);
-            List<String> modelAttributes = required.stream().filter(a -> !parentAttributes.contains(a)).collect(Collectors.toList());
-
-            for (String prop: parentAttributes) {
-                Map<String, Object> property = getProperty(prop, modelDesc, parents);
-                if (property != null) {
-                    if ("entity".equals(property.get("type"))) {
-                        stringProperties.append(ofNullable(property.get("range")).orElse("String"))
-                                .append(" ")
-                                .append(sanitizedProp(prop));
-                    } else {
-                        // should have a type but CallForTenders.title has no type
-                        String type = (String) ofNullable(property.get("type")).orElse("");
-                        stringProperties.append(ofNullable(nativeTypeMapping.get(type)).orElse("String"))
-                                .append(" ")
-                                .append(sanitizedProp(prop));
-                    }
-                    if (!prop.equals(required.get(required.size() - 1)) || !modelAttributes.isEmpty()) {
-                        stringProperties.append(", ");
-                    }
-                }
-            }
-            for (String prop: modelAttributes) {
-                Map<String, Object> property = getProperty(prop, modelDesc, parents);
-                if (property != null) {
-                    if ("entity".equals(property.get("type"))) {
-                        stringProperties.append(ofNullable(property.get("range")).orElse("String"))
-                                .append(" ")
-                                .append(sanitizedProp(prop));
-                        classAttributes.append("final ")
-                                .append(ofNullable(property.get("range")).orElse("String"))
-                                .append(" ")
-                                .append(sanitizedProp(prop)).append(";");
-                    } else {
-                        // should have a type but CallForTenders.title has no type
-                        String type = (String) ofNullable(property.get("type")).orElse("");
-                        stringProperties.append(ofNullable(nativeTypeMapping.get(type)).orElse("String"))
-                                .append(" ")
-                                .append(sanitizedProp(prop));
-                        classAttributes.append("final ")
-                                .append(ofNullable(nativeTypeMapping.get(type)).orElse("String"))
-                                .append(" ")
-                                .append(sanitizedProp(prop)).append(";");
-                    }
-                } else {
-                    // it seems that there are some fields that are not listed but in the required list
-                    // we should do a PR to fix that but for now we are putting a String property
-                    stringProperties.append(format("String %s", prop));
-                }
-                if (!prop.equals(modelAttributes.get(modelAttributes.size() - 1))) {
-                    stringProperties.append(", ");
-                }
-            }
 
             if (parents.containsKey(modelName) || inheritanceString.contains("extends")) {
                 return format("""
@@ -127,7 +76,7 @@ public class SourceGenerator {
                                 %s
                             }
                         }
-                        """, modelName, inheritanceString, classAttributes, modelName, stringProperties, classAttributesAssignation);
+                        """, modelName, inheritanceString, classAttributes, modelName, concatenate(parentsStringProperties, stringProperties), classAttributesAssignation);
             } else {
                 return format("""
                         package org.icij.ftm;
@@ -164,6 +113,11 @@ public class SourceGenerator {
         }
     }
 
+    private static String concatenate(String parentsStringProperties, String stringProperties) {
+        return parentsStringProperties.isEmpty() ? stringProperties : parentsStringProperties +
+                (stringProperties.isEmpty() ? "" : ", " + stringProperties);
+    }
+
     private static List<String> getRequired(Map<String, Object> model) {
         return (List<String>) ofNullable(model.get("required")).orElse(new ArrayList<>());
     }
@@ -197,7 +151,72 @@ public class SourceGenerator {
         return (Map<String, Object>) yaml.loadFromInputStream(new FileInputStream(yamlFile));
     }
 
-    private String sanitizedProp(String prop) {
+    private static String sanitizedProp(String prop) {
         return ofNullable(jvmReservedWords.get(prop)).orElse(prop);
+    }
+
+    static class AttributeHandlerForSignature {
+        private final Map<String, Object> modelDesc;
+        private final Map<String, Map<String, Object>> parents;
+
+        public AttributeHandlerForSignature(Map<String, Object> modelDesc, Map<String, Map<String, Object>> parents) {
+            this.modelDesc = modelDesc;
+            this.parents = parents;
+        }
+
+        String generateFor(List<String> attributes) {
+            StringBuilder stringProperties = new StringBuilder();
+            for (String prop: attributes) {
+                Map<String, Object> property = getProperty(prop, modelDesc, parents);
+                if (property != null) {
+                    if ("entity".equals(property.get("type"))) {
+                        addPropertyForEntity(stringProperties, prop, property);
+                    } else {
+                        addPropertyForNativeType(stringProperties, prop, property);
+                    }
+                    if (!prop.equals(attributes.get(attributes.size() - 1))) {
+                        stringProperties.append(", ");
+                    }
+                }
+            }
+            return stringProperties.toString();
+        }
+
+        protected void addPropertyForEntity(StringBuilder stringProperties, String prop, Map<String, Object> property) {
+            stringProperties.append(ofNullable(property.get("range")).orElse("String"))
+                    .append(" ")
+                    .append(sanitizedProp(prop));
+        }
+
+        protected void addPropertyForNativeType(StringBuilder stringProperties, String prop, Map<String, Object> property) {
+            // should have a type but CallForTenders.title has no type
+            String type = (String) ofNullable(property.get("type")).orElse("");
+            stringProperties.append(ofNullable(nativeTypeMapping.get(type)).orElse("String"))
+                    .append(" ")
+                    .append(sanitizedProp(prop));
+        }
+    }
+
+    static class AttributeHandlerForAttrs extends AttributeHandlerForSignature {
+        public AttributeHandlerForAttrs(Map<String, Object> modelDesc, Map<String, Map<String, Object>> parents) {
+            super(modelDesc, parents);
+        }
+
+        @Override
+        protected void addPropertyForEntity(StringBuilder stringProperties, String prop, Map<String, Object> property) {
+            stringProperties.append("final ")
+                    .append(ofNullable(property.get("range")).orElse("String"))
+                    .append(" ")
+                    .append(sanitizedProp(prop)).append(";");
+        }
+
+        @Override
+        protected void addPropertyForNativeType(StringBuilder stringProperties, String prop, Map<String, Object> property) {
+            String type = (String) ofNullable(property.get("type")).orElse("");
+            stringProperties.append("final ")
+                    .append(ofNullable(nativeTypeMapping.get(type)).orElse("String"))
+                    .append(" ")
+                    .append(sanitizedProp(prop)).append(";");
+        }
     }
 }
