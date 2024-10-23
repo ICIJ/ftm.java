@@ -12,17 +12,21 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
 public class SourceGenerator {
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final static Logger logger = LoggerFactory.getLogger(SourceGenerator.class);
     private final Properties properties;
     private static final Load yaml = new Load(LoadSettings.builder().build());
     ;
@@ -55,10 +59,9 @@ public class SourceGenerator {
 
         List<String> required = getRequired(modelDesc);
         if (!required.isEmpty()) {
-            List<String> extendz = (List<String>) ofNullable(modelDesc.get("extends")).orElse(new ArrayList());
-            String inheritanceString = getInheritanceString(extendz, parents);
+            String inheritanceString = getInheritanceString(modelDesc, parents);
 
-            List<String> parentsAttributes = getParentsAttributes(modelDesc, parents);
+            List<String> parentsAttributes = new ArrayList<>(getParentsAttributes(modelDesc, parents));
             List<String> modelAttributes = required.stream().filter(a -> !parentsAttributes.contains(a)).toList();
 
             String parentsStringProperties = new AttributeHandlerForSignature(modelDesc, parents).generateFor(parentsAttributes);
@@ -96,7 +99,7 @@ public class SourceGenerator {
     private static Map<String, Object> getProperty(String prop, Map<String, Object> model, Map<String, Map<String, Object>> parents) {
         Map<String, Object> property = (Map<String, Object>) ((Map<String, Object>) ofNullable(model.get("properties")).orElse(new HashMap<>())).get(prop);
         if (property == null) {
-            Optional<String> parent = getParent(getExtends(model), parents);
+            Optional<String> parent = getParent(model, parents);
             return parent.map(s -> getProperty(prop, parents.get(s), parents)).orElse(null);
         } else {
             return property;
@@ -104,13 +107,59 @@ public class SourceGenerator {
     }
 
     private static String getConstructor(Map<String, Object> model, Map<String, Map<String, Object>> parents) {
-        List<String> parentAttributes = getParentsAttributes(model, parents);
+        List<String> parentAttributes = new ArrayList<>(getParentsAttributes(model, parents));
         List<String> required = getRequired(model);
         if (!parentAttributes.isEmpty()) {
-            return format("super(%s);\n", String.join(",", parentAttributes)) + required.stream().filter(a -> !parentAttributes.contains(a)).map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
+            return format("super(%s);\n", String.join(", ", parentAttributes)) + required.stream().filter(a -> !parentAttributes.contains(a)).map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
         } else {
             return required.stream().map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
         }
+    }
+
+    private static LinkedHashSet<String> getParentsAttributes(Map<String, Object> model, Map<String, Map<String, Object>> parents) {
+        Optional<String> parent = getParent(model, parents);
+        if (parent.isPresent()) {
+            LinkedHashSet<String> grandParentsAttributes = getParentsAttributes(parents.get(parent.get()), parents);
+            List<String> parentAttributes = (List<String>) parents.getOrDefault(parent.get(), new HashMap<>()).get("required");
+            grandParentsAttributes.addAll(parentAttributes);
+            return grandParentsAttributes;
+        } else {
+            return new LinkedHashSet<>();
+        }
+    }
+
+    private static Optional<String> getParent(Map<String, Object> model, Map<String, Map<String, Object>> parents) {
+        List<String> extendz = getExtends(model);
+        List<String> parentRequired = extendz.stream().filter(p -> parents.getOrDefault(p, new HashMap<>()).get("required") != null).collect(Collectors.toList());
+        if (parentRequired.size()>1) {
+            logger.warn("got 2 parents for {} with required fields {} using the first", model.get("label"), parentRequired);
+            return Optional.of(parentRequired.get(0));
+        } else if (parentRequired.isEmpty()) {
+            // this is fragile. It works because the multiple inheritance is ending with diamonds
+            logger.debug("got no parent for {} with required fields, searching in grand-parents", model.get("label"));
+            Set<Optional<String>> grandParentsRequired = extendz.stream()
+                    .map(parents::get)
+                    .map(m -> getParent(m, parents))
+                    .filter(Optional::isPresent).collect(Collectors.toSet());
+            if (!grandParentsRequired.isEmpty()) {
+                if (grandParentsRequired.size() > 1) {
+                    logger.warn("got {} grand-parents with required fields returning first", grandParentsRequired);
+                }
+                return grandParentsRequired.iterator().next();
+            }
+            return Optional.empty();
+        } else {
+            return Optional.of(parentRequired.get(0));
+        }
+    }
+
+    private static String getInheritanceString(Map<String, Object> model, Map<String, Map<String, Object>> parents) {
+        Optional<String> javaExtend = getParent(model, parents);
+        List<String> extendz = getExtends(model);
+        List<String> implementsList = extendz.stream().filter(p -> parents.getOrDefault(p, new HashMap<>()).get("required") == null).collect(Collectors.toList());
+        String extendsString = javaExtend.isPresent() ? format("extends %s ", javaExtend.get()): "";
+        String implementsString = implementsList.isEmpty() ? "" : format("implements %s ", String.join(", ", implementsList));
+        return extendz.isEmpty() ? "" : extendsString + implementsString;
     }
 
     private static String concatenate(String parentsStringProperties, String stringProperties) {
@@ -122,29 +171,8 @@ public class SourceGenerator {
         return (List<String>) ofNullable(model.get("required")).orElse(new ArrayList<>());
     }
 
-    private static List<String> getParentsAttributes(Map<String, Object> model, Map<String, Map<String, Object>> parents) {
-        Optional<String> parent = getParent(getExtends(model), parents);
-        if (parent.isPresent()) {
-            return (List<String>) parents.getOrDefault(parent.get(), new HashMap<>()).get("required");
-        } else {
-            return new ArrayList<>();
-        }
-    }
-
     private static List<String> getExtends(Map<String, Object> model) {
         return (List<String>) model.getOrDefault("extends", new ArrayList<>());
-    }
-
-    private static Optional<String> getParent(List<String> extendz, Map<String, Map<String, Object>> parents) {
-        return extendz.stream().filter(p -> parents.getOrDefault(p, new HashMap<>()).get("required") != null).findFirst();
-    }
-
-    private static String getInheritanceString(List<String> extendz, Map<String, Map<String, Object>> parents) {
-        List<String> extendsList = extendz.stream().filter(p -> parents.getOrDefault(p, new HashMap<>()).get("required") != null).collect(Collectors.toList());
-        List<String> implementsList = extendz.stream().filter(p -> parents.getOrDefault(p, new HashMap<>()).get("required") == null).collect(Collectors.toList());
-        String extendsString = extendsList.isEmpty() ? "" : format("extends %s ", String.join(", ", extendsList));
-        String implementsString = implementsList.isEmpty() ? "" : format("implements %s ", String.join(", ", implementsList));
-        return extendz.isEmpty() ? "" : extendsString + implementsString;
     }
 
     static Map<String, Object> getYamlContent(File yamlFile) throws FileNotFoundException {
@@ -175,11 +203,15 @@ public class SourceGenerator {
                         addPropertyForNativeType(stringProperties, prop, property);
                     }
                     if (!prop.equals(attributes.get(attributes.size() - 1))) {
-                        stringProperties.append(", ");
+                        addSeparator(stringProperties);
                     }
                 }
             }
             return stringProperties.toString();
+        }
+
+        protected void addSeparator(StringBuilder stringProperties) {
+            stringProperties.append(", ");
         }
 
         protected void addPropertyForEntity(StringBuilder stringProperties, String prop, Map<String, Object> property) {
@@ -217,6 +249,10 @@ public class SourceGenerator {
                     .append(ofNullable(nativeTypeMapping.get(type)).orElse("String"))
                     .append(" ")
                     .append(sanitizedProp(prop)).append(";");
+        }
+
+        protected void addSeparator(StringBuilder stringProperties) {
+            stringProperties.append("\n");
         }
     }
 }
