@@ -13,36 +13,18 @@ To use it, just make `mvn package` it will generate and compile FtM models in a 
 ```mermaid
 classDiagram
 direction BT
-class Address {
-<<Interface>>
-
-}
-class Airplane {
-<<Interface>>
-
-}
+class Address
+class Airplane
 class Analyzable {
 <<Interface>>
 
 }
-class Article {
-<<Interface>>
-
-}
+class Article
 class Assessment
-class Asset {
-<<Interface>>
-
-}
+class Asset
 class Associate
-class Audio {
-<<Interface>>
-
-}
-class BankAccount {
-<<Interface>>
-
-}
+class Audio
+class BankAccount
 class Call {
 <<Interface>>
 
@@ -53,10 +35,7 @@ class Contract
 class ContractAward
 class CourtCase
 class CourtCaseParty
-class CryptoWallet {
-<<Interface>>
-
-}
+class CryptoWallet
 class Debt
 class Directorship
 class Document
@@ -65,26 +44,14 @@ class EconomicActivity {
 <<Interface>>
 
 }
-class Email {
-<<Interface>>
-
-}
+class Email
 class Employment
 class Event
 class Family
-class Folder {
-<<Interface>>
-
-}
-class HyperText {
-<<Interface>>
-
-}
+class Folder
+class HyperText
 class Identification
-class Image {
-<<Interface>>
-
-}
+class Image
 class Interest {
 <<Interface>>
 
@@ -98,62 +65,38 @@ class License
 class Membership
 class Mention
 class Message
-class Note {
-<<Interface>>
-
-}
+class Note
 class Occupancy
 class Organization
 class Ownership
-class Package {
-<<Interface>>
-
-}
+class Package
 class Page {
 <<Interface>>
 
 }
-class Pages {
-<<Interface>>
-
-}
+class Pages
 class Passport
 class Payment
 class Person
-class PlainText {
-<<Interface>>
-
-}
+class PlainText
 class Position
 class Post
-class Project {
-<<Interface>>
-
-}
+class Project
 class ProjectParticipant {
 <<Interface>>
 
 }
 class PublicBody
-class RealEstate {
-<<Interface>>
-
-}
+class RealEstate
 class Representation
 class Sanction
-class Security {
-<<Interface>>
-
-}
+class Security
 class Similar {
 <<Interface>>
 
 }
 class Succession
-class Table {
-<<Interface>>
-
-}
+class Table
 class TaxRoll
 class Thing
 class Trip
@@ -163,70 +106,99 @@ class Value {
 <<Interface>>
 
 }
-class Vehicle {
-<<Interface>>
-
-}
+class Vehicle
 class Vessel
-class Video {
-<<Interface>>
+class Video
+class Workbook
 
-}
-class Workbook {
-<<Interface>>
-
-}
-
-Assessment  -->  Thing
-Associate  ..>  Interval
-CallForTenders  ..>  Interval
-CallForTenders  -->  Thing
-Company  ..>  Asset
-Company  -->  Organization
-Contract  ..>  Asset
-Contract  -->  Thing
-ContractAward  ..>  Interest
-ContractAward  ..>  Value
-CourtCase  -->  Thing
-CourtCaseParty  ..>  Interest
-Debt  ..>  Interval
-Debt  ..>  Value
-Directorship  ..>  Interest
-Document  ..>  Analyzable
-Document  -->  Thing
-Documentation  ..>  Interest
-Employment  ..>  Interest
-Event  ..>  Analyzable
-Event  ..>  Interval
-Event  -->  Thing
-Family  ..>  Interval
-Identification  ..>  Interval
-LegalEntity  -->  Thing
-License  -->  Contract
-Membership  ..>  Interest
-Message  -->  Document
-Message  ..>  Folder
-Message  ..>  HyperText
-Message  ..>  Interval
-Message  ..>  PlainText
-Occupancy  ..>  Interval
-Organization  -->  LegalEntity
-Ownership  ..>  Interest
-Passport  -->  Identification
-Payment  ..>  Interval
-Payment  ..>  Value
-Person  -->  LegalEntity
-Position  -->  Thing
-Post  ..>  Interest
-PublicBody  -->  Organization
-Representation  ..>  Interest
-Sanction  ..>  Interval
-Succession  ..>  Interest
-TaxRoll  ..>  Interval
-Trip  -->  Event
-UnknownLink  ..>  Interest
-UserAccount  -->  Thing
-Vessel  -->  Thing
+Address  -->  Thing 
+Airplane  -->  Thing 
+Airplane  ..>  Vehicle 
+Article  -->  Document 
+Assessment  -->  Thing 
+Asset  -->  Thing 
+Asset  ..>  Value 
+Associate  ..>  Interval 
+Audio  -->  Document 
+BankAccount  ..>  Asset 
+BankAccount  -->  Thing 
+CallForTenders  ..>  Interval 
+CallForTenders  -->  Thing 
+Company  ..>  Asset 
+Company  -->  Organization 
+Contract  ..>  Asset 
+Contract  -->  Thing 
+ContractAward  ..>  Interest 
+ContractAward  ..>  Value 
+CourtCase  -->  Thing 
+CourtCaseParty  ..>  Interest 
+CryptoWallet  -->  Thing 
+CryptoWallet  ..>  Value 
+Debt  ..>  Interval 
+Debt  ..>  Value 
+Directorship  ..>  Interest 
+Document  ..>  Analyzable 
+Document  -->  Thing 
+Documentation  ..>  Interest 
+Email  -->  Document 
+Email  ..>  Folder 
+Email  ..>  HyperText 
+Email  ..>  PlainText 
+Employment  ..>  Interest 
+Event  ..>  Analyzable 
+Event  ..>  Interval 
+Event  -->  Thing 
+Family  ..>  Interval 
+Folder  -->  Document 
+HyperText  -->  Document 
+Identification  ..>  Interval 
+Image  -->  Document 
+LegalEntity  -->  Thing 
+License  -->  Contract 
+Membership  ..>  Interest 
+Message  -->  Document 
+Message  ..>  Folder 
+Message  ..>  HyperText 
+Message  ..>  Interval 
+Message  ..>  PlainText 
+Note  ..>  Analyzable 
+Note  -->  Thing 
+Occupancy  ..>  Interval 
+Organization  -->  LegalEntity 
+Ownership  ..>  Interest 
+Package  -->  Document 
+Package  ..>  Folder 
+Pages  -->  Document 
+Passport  -->  Identification 
+Payment  ..>  Interval 
+Payment  ..>  Value 
+Person  -->  LegalEntity 
+PlainText  -->  Document 
+Position  -->  Thing 
+Post  ..>  Interest 
+Project  ..>  Interval 
+Project  -->  Thing 
+Project  ..>  Value 
+PublicBody  -->  Organization 
+RealEstate  ..>  Asset 
+RealEstate  -->  Thing 
+Representation  ..>  Interest 
+Sanction  ..>  Interval 
+Security  ..>  Asset 
+Security  -->  Thing 
+Succession  ..>  Interest 
+Table  -->  Document 
+TaxRoll  ..>  Interval 
+Trip  -->  Event 
+UnknownLink  ..>  Interest 
+UserAccount  -->  Thing 
+Vehicle  ..>  Asset 
+Vehicle  -->  Thing 
+Vessel  -->  Thing 
 Vessel  ..>  Vehicle 
+Video  -->  Document 
+Workbook  -->  Document 
+Workbook  ..>  Folder 
+
 ```
 
