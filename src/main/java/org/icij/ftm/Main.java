@@ -10,6 +10,10 @@ import java.util.Objects;
 import static java.util.stream.Collectors.toMap;
 import static org.icij.ftm.Utils.propertiesFromMap;
 
+/**
+ * main class to be called for downloading yaml files and generating java source files.
+ * Java source files are generated for maven project in target/generated-sources.
+ */
 public class Main {
     public static final String SCHEMA_URL = "https://api.github.com/repos/ICIJ/followthemoney/contents/followthemoney/schema";
 

@@ -25,6 +25,10 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+/**
+ * Utils methods, that would need at some point to be in
+ * other classes.
+ */
 public class Utils {
     public static Properties propertiesFromMap(Map<String, Object> map) {
         Properties props = new Properties();

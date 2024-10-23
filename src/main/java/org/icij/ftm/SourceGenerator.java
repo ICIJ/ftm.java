@@ -25,6 +25,10 @@ import java.util.stream.Collectors;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
+/**
+ * Generate java source from FtM model yaml file.
+ * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema">here</a>.
+ */
 public class SourceGenerator {
     private final static Logger logger = LoggerFactory.getLogger(SourceGenerator.class);
     private final Properties properties;
@@ -72,27 +76,39 @@ public class SourceGenerator {
             if (parents.containsKey(modelName) || inheritanceString.contains("extends")) {
                 return format("""
                         package org.icij.ftm;
-                                        
+                                
+                        /**
+                         * Automatically generated class for FtM model. Do not update this class.
+                         * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema/%s.yaml">%s</a>.
+                         */
                         public class %s %s{
                             %s
                             public %s (%s) {
                                 %s
                             }
                         }
-                        """, modelName, inheritanceString, classAttributes, modelName, concatenate(parentsStringProperties, stringProperties), classAttributesAssignation);
+                        """, modelName, modelName, modelName, inheritanceString, classAttributes, modelName, concatenate(parentsStringProperties, stringProperties), classAttributesAssignation);
             } else {
                 return format("""
                         package org.icij.ftm;
-                                        
+                         
+                        /**
+                         * Automatically generated record for FtM model. Do not update this class.
+                         * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema/%s.yaml">%s</a>.
+                         */
                         public record %s(%s) %s{};
-                        """, modelName, stringProperties, inheritanceString);
+                        """, modelName, modelName, modelName, stringProperties, inheritanceString);
             }
         } else {
             return format("""
                     package org.icij.ftm;
-                                    
+                    
+                    /**
+                     * Automatically generated class for FtM model. Do not update this class.
+                     * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema/%s.yaml">%s</a>.
+                    */
                     public interface %s {};
-                    """, modelName);
+                    """, modelName, modelName, modelName);
         }
     }
 
