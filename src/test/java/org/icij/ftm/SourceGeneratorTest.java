@@ -166,6 +166,19 @@ public class SourceGeneratorTest {
         assertThat(sourceGenerator.generate(path)).doesNotContain("final String name;");
     }
 
+    @Test
+    public void test_generate_class_if_extends_class_ex_Pages() throws Exception {
+        Path path = getPath("Pages.yaml");
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[]{
+                getPath("Document.yaml").toFile(),
+                getPath("Thing.yaml").toFile(),
+                getPath("Analyzable.yaml").toFile(),
+                getPath("Pages.yaml").toFile()
+        }))));
+
+        assertThat(sourceGenerator.generate(path)).contains("public class Pages extends Document {");
+    }
+
     private static Path getPath(String name) {
         return Paths.get(ClassLoader.getSystemResource(name).getPath());
     }

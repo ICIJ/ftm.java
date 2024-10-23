@@ -62,9 +62,9 @@ public class SourceGenerator {
                 ofNullable(this.properties.get("parents")).orElse(new HashMap<>());
 
         List<String> required = getRequired(modelDesc);
-        if (!required.isEmpty()) {
-            String inheritanceString = getInheritanceString(modelDesc, parents);
+        String inheritanceString = getInheritanceString(modelDesc, parents);
 
+        if (!required.isEmpty() || inheritanceString.contains("extends")) {
             List<String> parentsAttributes = new ArrayList<>(getParentsAttributes(modelDesc, parents));
             List<String> modelAttributes = required.stream().filter(a -> !parentsAttributes.contains(a)).toList();
 
