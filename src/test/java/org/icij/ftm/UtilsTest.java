@@ -5,18 +5,16 @@ import org.junit.Test;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.fest.assertions.Assertions.assertThat;
 
-public class MainTest {
+public class UtilsTest {
     @Test
     public void test_download_files() throws Exception {
-        Path sourceFiles = new Main().downloadYamlModels();
+        Path sourceFiles = Utils.downloadYamlModels(URI.create(Main.SCHEMA_URL));
         assertThat(sourceFiles.toFile().listFiles()).hasSize(70);
     }
 
@@ -25,8 +23,8 @@ public class MainTest {
         List<String> models = List.of("Interval.yaml", "CallForTenders.yaml", "Thing.yaml");
         List<File> modelFiles = getFiles(models);
 
-        assertThat(Main.findParents(modelFiles.toArray(new File[]{}))).hasSize(2);
-        assertThat(Main.findParents(modelFiles.toArray(new File[]{})).keySet()).contains("Interval", "Thing");
+        assertThat(Utils.findParents(modelFiles.toArray(new File[]{}))).hasSize(2);
+        assertThat(Utils.findParents(modelFiles.toArray(new File[]{})).keySet()).contains("Interval", "Thing");
     }
 
     private static List<File> getFiles(List<String> models) {

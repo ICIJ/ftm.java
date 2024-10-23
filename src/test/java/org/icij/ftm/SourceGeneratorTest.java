@@ -95,7 +95,7 @@ public class SourceGeneratorTest {
 
     @Test
     public void test_getting_attributes_from_inheritance() throws IOException {
-        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Main.findParents(new File[]{
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[]{
                 getPath("Document.yaml").toFile(),
                 getPath("PlainText.yaml").toFile(),
                 getPath("HyperText.yaml").toFile(),
@@ -115,7 +115,7 @@ public class SourceGeneratorTest {
     @Test
     public void test_fix_occupancy() throws IOException {
         Path path = getPath("Occupancy.yaml");
-        SourceGenerator sg = new SourceGenerator(propertiesFromMap(of("parents", Main.findParents(new File[]{
+        SourceGenerator sg = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[]{
                 getPath("Interval.yaml").toFile(),
                 getPath("Occupancy.yaml").toFile(),
         }))));
@@ -126,7 +126,7 @@ public class SourceGeneratorTest {
     @Test
     public void test_two_levels_inheritance() throws IOException {
         Path path = getPath("Organization.yaml");
-        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Main.findParents(new File[]{
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[]{
                 getPath("LegalEntity.yaml").toFile(),
                 getPath("Organization.yaml").toFile(),
                 getPath("Thing.yaml").toFile()}))));
@@ -137,7 +137,7 @@ public class SourceGeneratorTest {
     @Test
     public void test_fix_call_for_tender() throws IOException {
         Path path = getPath("CallForTenders.yaml");
-        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Main.findParents(new File[]{
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[]{
                 getPath("Interval.yaml").toFile(),
                 getPath("CallForTenders.yaml").toFile(),
                 getPath("Thing.yaml").toFile()}))));
@@ -155,7 +155,7 @@ public class SourceGeneratorTest {
     @Test
     public void test_license_bug() throws Exception {
         Path path = getPath("License.yaml");
-        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Main.findParents(new File[]{
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[]{
                 getPath("License.yaml").toFile(),
                 getPath("Contract.yaml").toFile(),
                 getPath("Thing.yaml").toFile(),
