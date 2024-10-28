@@ -57,18 +57,21 @@ public class Utils {
         return tempDirectory;
     }
 
-    static Map<String, Map<String, Object>> findParents(File[] yamlFiles) throws FileNotFoundException {
-        Set<String> parents = new LinkedHashSet<>();
+    static Map<String, Model> findParents(File[] yamlFiles) throws FileNotFoundException {
+        Set<String> parentNames = new LinkedHashSet<>();
         Map<String, Map<String, Object>> modelsMap = new HashMap<>();
         for (File file: yamlFiles) {
             Map<String, Object> yamlContent = SourceGenerator.getYamlContent(file);
-            String modelName = yamlContent.keySet().iterator().next();
-            Map<String, Object> model = (Map<String, Object>) yamlContent.values().iterator().next();
-            List<String> extendz = (List<String>) ofNullable(model.get("extends")).orElse(new ArrayList<>());
-            parents.addAll(extendz);
-            modelsMap.put(modelName, model);
+            Model model = new Model(yamlContent);
+            parentNames.addAll(model.getExtends());
+            modelsMap.put(model.name(), yamlContent);
         }
-        return modelsMap.entrySet().stream().filter(e -> parents.contains(e.getKey())).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, Map<String, Object>> mapOfMap = modelsMap.entrySet().stream().filter(e -> parentNames.contains(e.getKey())).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, Model> parents = new HashMap<>();
+        for (Map.Entry<String, Map<String, Object>> entry: mapOfMap.entrySet()) {
+            parents.put(entry.getKey(), new Model(entry.getValue(), parents));
+        }
+        return parents;
     }
 
     static String getJavaFileName(File yamlFile) {

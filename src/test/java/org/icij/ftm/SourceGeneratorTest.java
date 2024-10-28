@@ -1,6 +1,7 @@
 package org.icij.ftm;
 
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -41,10 +42,10 @@ public class SourceGeneratorTest {
     @Test
     public void test_call_super_in_daughter_class() throws IOException {
         Path path = getPath("CallForTenders.yaml");
-        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Map.of(
-                        "Thing", Map.of("required", List.of("name"), "properties", Map.of("name", Map.of("type", "name")))),
-                "Interval", Map.of()
-        )));
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[] {
+                getPath("Thing.yaml").toFile(),
+                path.toFile()
+        }))));
         assertThat(sourceGenerator.generate(path)).contains("extends Thing");
         assertThat(sourceGenerator.generate(path)).contains("super(name);");
         assertThat(sourceGenerator.generate(path)).contains("public CallForTenders (String name, String title, LegalEntity authority) {");
@@ -55,9 +56,10 @@ public class SourceGeneratorTest {
     @Test
     public void test_call_super_in_daughter_class_should_not_define_parent_property() throws IOException {
         Path path = getPath("LegalEntity.yaml");
-        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Map.of(
-                "Thing", Map.of("required", List.of("name"), "properties", Map.of("name", Map.of("type", "name"))))
-        )));
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[] {
+                getPath("Thing.yaml").toFile(),
+                path.toFile()
+        }))));
         assertThat(sourceGenerator.generate(path)).contains("public LegalEntity (String name) {");
         assertThat(sourceGenerator.generate(path)).contains("super(name);");
         assertThat(sourceGenerator.generate(path)).doesNotContain("this.name = name;");
@@ -66,12 +68,11 @@ public class SourceGeneratorTest {
     @Test
     public void test_passport_bug() throws IOException {
         Path path = getPath("Passport.yaml");
-        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Map.of(
-                "Identification", Map.of("required", List.of("holder", "number"),
-                        "properties", Map.of(
-                                "holder", Map.of("type", "entity", "range", "LegalEntity"),
-                                "number", Map.of("type", "identifier"))))
-        )));
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[] {
+                getPath("Interval.yaml").toFile(),
+                getPath("Identification.yaml").toFile(),
+                path.toFile()
+        }))));
         assertThat(sourceGenerator.generate(path)).contains("public Passport (LegalEntity holder, String number, String passportNumber) {");
     }
 
@@ -177,6 +178,19 @@ public class SourceGeneratorTest {
         }))));
 
         assertThat(sourceGenerator.generate(path)).contains("public class Pages extends Document {");
+    }
+
+    @Test
+    @Ignore
+    public void test_generate_mixin_should_not_generate_class() throws Exception {
+        Path path = getPath("Asset.yaml");
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[]{
+                getPath("Thing.yaml").toFile(),
+                getPath("Value.yaml").toFile(),
+                path.toFile()
+        }))));
+
+        assertThat(sourceGenerator.generate(path)).contains("public interface Asset extends Value {");
     }
 
     private static Path getPath(String name) {
