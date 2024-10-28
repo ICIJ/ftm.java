@@ -21,7 +21,10 @@ class Analyzable {
 }
 class Article
 class Assessment
-class Asset
+class Asset {
+<<Interface>>
+
+}
 class Associate
 class Audio
 class BankAccount
@@ -48,8 +51,14 @@ class Email
 class Employment
 class Event
 class Family
-class Folder
-class HyperText
+class Folder {
+<<Interface>>
+
+}
+class HyperText {
+<<Interface>>
+
+}
 class Identification
 class Image
 class Interest {
@@ -78,7 +87,10 @@ class Pages
 class Passport
 class Payment
 class Person
-class PlainText
+class PlainText {
+<<Interface>>
+
+}
 class Position
 class Post
 class Project
@@ -112,16 +124,15 @@ class Video
 class Workbook
 
 Address  -->  Thing 
-Airplane  -->  Thing 
-Airplane  ..>  Vehicle 
+Airplane  -->  Vehicle 
 Article  -->  Document 
 Assessment  -->  Thing 
-Asset  -->  Thing 
-Asset  ..>  Value 
+Asset  -->  Value 
 Associate  ..>  Interval 
 Audio  -->  Document 
 BankAccount  ..>  Asset 
 BankAccount  -->  Thing 
+Call  -->  Interval 
 CallForTenders  ..>  Interval 
 CallForTenders  -->  Thing 
 Company  ..>  Asset 
@@ -140,6 +151,7 @@ Directorship  ..>  Interest
 Document  ..>  Analyzable 
 Document  -->  Thing 
 Documentation  ..>  Interest 
+EconomicActivity  -->  Interval 
 Email  -->  Document 
 Email  ..>  Folder 
 Email  ..>  HyperText 
@@ -149,10 +161,9 @@ Event  ..>  Analyzable
 Event  ..>  Interval 
 Event  -->  Thing 
 Family  ..>  Interval 
-Folder  -->  Document 
-HyperText  -->  Document 
 Identification  ..>  Interval 
 Image  -->  Document 
+Interest  -->  Interval 
 LegalEntity  -->  Thing 
 License  -->  Contract 
 Membership  ..>  Interest 
@@ -173,12 +184,12 @@ Passport  -->  Identification
 Payment  ..>  Interval 
 Payment  ..>  Value 
 Person  -->  LegalEntity 
-PlainText  -->  Document 
 Position  -->  Thing 
 Post  ..>  Interest 
 Project  ..>  Interval 
 Project  -->  Thing 
 Project  ..>  Value 
+ProjectParticipant  -->  Interest 
 PublicBody  -->  Organization 
 RealEstate  ..>  Asset 
 RealEstate  -->  Thing 
@@ -194,8 +205,7 @@ UnknownLink  ..>  Interest
 UserAccount  -->  Thing 
 Vehicle  ..>  Asset 
 Vehicle  -->  Thing 
-Vessel  -->  Thing 
-Vessel  ..>  Vehicle 
+Vessel  -->  Vehicle 
 Video  -->  Document 
 Workbook  -->  Document 
 Workbook  ..>  Folder 
