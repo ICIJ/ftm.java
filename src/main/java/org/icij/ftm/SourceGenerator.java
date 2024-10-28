@@ -53,12 +53,11 @@ public class SourceGenerator {
         Map<String, Model> parents = (Map<String, Model>)
                 ofNullable(this.properties.get("parents")).orElse(new HashMap<>());
         Model model = new Model(getYamlContent(path.toFile()), parents);
-        String modelName = model.name();
 
         List<String> required = model.getRequired();
         String inheritanceString = getInheritanceString(model, parents);
 
-        if (!required.isEmpty() || inheritanceString.contains("extends")) {
+        if (model.isConcrete()) {
             List<String> parentsAttributes = new ArrayList<>(getParentsAttributes(model, parents));
             List<String> modelAttributes = required.stream().filter(a -> !parentsAttributes.contains(a)).toList();
 
@@ -67,7 +66,7 @@ public class SourceGenerator {
             String classAttributes = new AttributeHandlerForAttrs(model, parents).generateFor(modelAttributes);
             String classAttributesAssignation = getConstructor(model, parents);
 
-            if (parents.containsKey(modelName) || inheritanceString.contains("extends")) {
+            if (parents.containsKey(model.name()) || inheritanceString.contains("extends")) {
                 return format("""
                         package org.icij.ftm;
                                 
@@ -81,7 +80,7 @@ public class SourceGenerator {
                                 %s
                             }
                         }
-                        """, modelName, modelName, modelName, inheritanceString, classAttributes, modelName, concatenate(parentsStringProperties, stringProperties), classAttributesAssignation);
+                        """, model.name(), model.name(), model.name(), inheritanceString, classAttributes, model.name(), concatenate(parentsStringProperties, stringProperties), classAttributesAssignation);
             } else {
                 return format("""
                         package org.icij.ftm;
@@ -91,7 +90,7 @@ public class SourceGenerator {
                          * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema/%s.yaml">%s</a>.
                          */
                         public record %s(%s) %s{};
-                        """, modelName, modelName, modelName, stringProperties, inheritanceString);
+                        """, model.name(), model.name(), model.name(), stringProperties, inheritanceString);
             }
         } else {
             return format("""
@@ -101,8 +100,8 @@ public class SourceGenerator {
                      * Automatically generated class for FtM model. Do not update this class.
                      * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema/%s.yaml">%s</a>.
                     */
-                    public interface %s {};
-                    """, modelName, modelName, modelName);
+                    public interface %s %s{};
+                    """, model.name(), model.name(), model.name(), inheritanceString);
         }
     }
 
@@ -167,8 +166,10 @@ public class SourceGenerator {
         Optional<String> javaExtend = getConcreteParent(model, parents);
         List<String> extendz = model.getExtends();
         List<String> implementsList = extendz.stream().filter(p -> parents.get(p) == null || !parents.get(p).isConcrete()).collect(Collectors.toList());
-        String extendsString = javaExtend.isPresent() ? format("extends %s ", javaExtend.get()): "";
-        String implementsString = implementsList.isEmpty() ? "" : format("implements %s ", String.join(", ", implementsList));
+        String extendsString = model.isConcrete() && javaExtend.isPresent() ? format("extends %s ", javaExtend.get()): "";
+        String implementsString = implementsList.isEmpty() ? "" : model.isConcrete() ?
+                format("implements %s ", String.join(", ", implementsList)):
+                format("extends %s ", String.join(", ", implementsList));
         return extendz.isEmpty() ? "" : extendsString + implementsString;
     }
 

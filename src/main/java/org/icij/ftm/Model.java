@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static java.lang.String.format;
@@ -52,6 +53,24 @@ public class Model {
     }
 
     public boolean isConcrete() {
-        return !getRequired().isEmpty();
+        return  !mixins.contains(name()) && !getRequired().isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        return name();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Model model = (Model) o;
+        return Objects.equals(yaml, model.yaml);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(yaml);
     }
 }
