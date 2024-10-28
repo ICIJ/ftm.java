@@ -12,12 +12,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -55,16 +53,16 @@ public class SourceGenerator {
         Model model = new Model(getYamlContent(path.toFile()), parents);
 
         List<String> required = model.getRequired();
-        String inheritanceString = getInheritanceString(model, parents);
+        String inheritanceString = getInheritanceString(model);
 
         if (model.isConcrete()) {
-            List<String> parentsAttributes = new ArrayList<>(getParentsAttributes(model, parents));
+            List<String> parentsAttributes = new ArrayList<>(model.getParentsAttributes());
             List<String> modelAttributes = required.stream().filter(a -> !parentsAttributes.contains(a)).toList();
 
-            String parentsStringProperties = new AttributeHandlerForSignature(model, parents).generateFor(parentsAttributes);
-            String stringProperties = new AttributeHandlerForSignature(model, parents).generateFor(modelAttributes);
+            String parentsStringProperties = new AttributeHandlerForSignature(model).generateFor(parentsAttributes);
+            String stringProperties = new AttributeHandlerForSignature(model).generateFor(modelAttributes);
             String classAttributes = new AttributeHandlerForAttrs(model, parents).generateFor(modelAttributes);
-            String classAttributesAssignation = getConstructor(model, parents);
+            String classAttributesAssignation = getConstructor(model);
 
             if (parents.containsKey(model.name()) || inheritanceString.contains("extends")) {
                 return format("""
@@ -105,18 +103,8 @@ public class SourceGenerator {
         }
     }
 
-    private static Map<String, Object> getProperty(String prop, Model model, Map<String, Model> parents) {
-        Map<String, Object> property = (Map<String, Object>) model.properties().get(prop);
-        if (property == null) {
-            Optional<String> parent = getConcreteParent(model, parents);
-            return parent.map(s -> getProperty(prop, parents.get(s), parents)).orElse(null);
-        } else {
-            return property;
-        }
-    }
-
-    private static String getConstructor(Model model, Map<String, Model> parents) {
-        List<String> parentAttributes = new ArrayList<>(getParentsAttributes(model, parents));
+    private static String getConstructor(Model model) {
+        List<String> parentAttributes = new ArrayList<>(model.getParentsAttributes());
         List<String> required = model.getRequired();
         if (!parentAttributes.isEmpty()) {
             return format("super(%s);\n", String.join(", ", parentAttributes)) + required.stream().filter(a -> !parentAttributes.contains(a)).map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
@@ -125,47 +113,10 @@ public class SourceGenerator {
         }
     }
 
-    private static LinkedHashSet<String> getParentsAttributes(Model model, Map<String, Model> parents) {
-        Optional<String> parent = getConcreteParent(model, parents);
-        if (parent.isPresent()) {
-            LinkedHashSet<String> grandParentsAttributes = getParentsAttributes(parents.get(parent.get()), parents);
-            List<String> parentAttributes = parents.get(parent.get()).getRequired();
-            grandParentsAttributes.addAll(parentAttributes);
-            return grandParentsAttributes;
-        } else {
-            return new LinkedHashSet<>();
-        }
-    }
-
-    private static Optional<String> getConcreteParent(Model model, Map<String, Model> parents) {
+    private static String getInheritanceString(Model model) {
+        Optional<String> javaExtend = model.getConcreteParent();
         List<String> extendz = model.getExtends();
-        List<String> concreteParents = extendz.stream().filter(p -> parents.get(p) == null || parents.get(p).isConcrete()).collect(Collectors.toList());
-        if (concreteParents.size()>1) {
-            logger.warn("got 2 concrete parents ({}) for {}, using the first", concreteParents, model.label());
-            return Optional.of(concreteParents.get(0));
-        } else if (concreteParents.isEmpty()) {
-            // this is fragile. It works because the multiple inheritance is ending with diamonds
-            logger.debug("got no concrete parent for {}, searching in grand-parents", model.label());
-            Set<Optional<String>> concreteGrandParents = extendz.stream()
-                    .map(parents::get)
-                    .map(m -> getConcreteParent(m, parents))
-                    .filter(Optional::isPresent).collect(Collectors.toSet());
-            if (!concreteGrandParents.isEmpty()) {
-                if (concreteGrandParents.size() > 1) {
-                    logger.warn("got {} concrete grand-parents, returning first", concreteGrandParents);
-                }
-                return concreteGrandParents.iterator().next();
-            }
-            return Optional.empty();
-        } else {
-            return Optional.of(concreteParents.get(0));
-        }
-    }
-
-    private static String getInheritanceString(Model model, Map<String, Model> parents) {
-        Optional<String> javaExtend = getConcreteParent(model, parents);
-        List<String> extendz = model.getExtends();
-        List<String> implementsList = extendz.stream().filter(p -> parents.get(p) == null || !parents.get(p).isConcrete()).collect(Collectors.toList());
+        List<String> implementsList = extendz.stream().filter(p -> model.parents.get(p) == null || !model.parents.get(p).isConcrete()).collect(Collectors.toList());
         String extendsString = model.isConcrete() && javaExtend.isPresent() ? format("extends %s ", javaExtend.get()): "";
         String implementsString = implementsList.isEmpty() ? "" : model.isConcrete() ?
                 format("implements %s ", String.join(", ", implementsList)):
@@ -187,18 +138,16 @@ public class SourceGenerator {
     }
 
     static class AttributeHandlerForSignature {
-        private final Model modelDesc;
-        private final Map<String, Model> parents;
+        private final Model model;
 
-        public AttributeHandlerForSignature(Model modelDesc, Map<String, Model> parents) {
-            this.modelDesc = modelDesc;
-            this.parents = parents;
+        public AttributeHandlerForSignature(Model model) {
+            this.model = model;
         }
 
         String generateFor(List<String> attributes) {
             StringBuilder stringProperties = new StringBuilder();
             for (String prop: attributes) {
-                Map<String, Object> property = getProperty(prop, modelDesc, parents);
+                Map<String, Object> property = model.getProperty(prop);
                 if (property != null) {
                     if ("entity".equals(property.get("type"))) {
                         addPropertyForEntity(stringProperties, prop, property);
@@ -234,7 +183,7 @@ public class SourceGenerator {
 
     static class AttributeHandlerForAttrs extends AttributeHandlerForSignature {
         public AttributeHandlerForAttrs(Model model, Map<String, Model> parents) {
-            super(model, parents);
+            super(model);
         }
 
         @Override
