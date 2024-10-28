@@ -61,7 +61,7 @@ public class SourceGenerator {
 
             String parentsStringProperties = new AttributeHandlerForSignature(model).generateFor(parentsAttributes);
             String stringProperties = new AttributeHandlerForSignature(model).generateFor(modelAttributes);
-            String classAttributes = new AttributeHandlerForAttrs(model, parents).generateFor(modelAttributes);
+            String classAttributes = new AttributeHandlerForAttrs(model).generateFor(modelAttributes);
             String classAttributesAssignation = getConstructor(model);
 
             if (parents.containsKey(model.name()) || inheritanceString.contains("extends")) {
@@ -182,7 +182,7 @@ public class SourceGenerator {
     }
 
     static class AttributeHandlerForAttrs extends AttributeHandlerForSignature {
-        public AttributeHandlerForAttrs(Model model, Map<String, Model> parents) {
+        public AttributeHandlerForAttrs(Model model) {
             super(model);
         }
 

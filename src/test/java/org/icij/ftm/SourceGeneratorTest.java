@@ -168,7 +168,6 @@ public class SourceGeneratorTest {
     }
 
     @Test
-    @Ignore
     public void test_generate_class_if_extends_class_ex_Pages() throws Exception {
         Path path = getPath("Pages.yaml");
         SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[]{

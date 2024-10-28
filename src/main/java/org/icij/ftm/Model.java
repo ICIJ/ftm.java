@@ -20,7 +20,7 @@ public class Model {
     private final static Logger logger = LoggerFactory.getLogger(Model.class);
     final Map<String, Model> parents;
     private final Map<String, Object> yaml;
-    private static final Set<String> mixins = new LinkedHashSet<>(List.of("Asset"));
+    private static final Set<String> mixins = new LinkedHashSet<>(List.of("Asset", "Folder", "PlainText", "HyperText"));
 
     public Model(Map<String, Object> modelMap, Map<String, Model> parents) {
         this.yaml = Collections.unmodifiableMap(modelMap);
@@ -92,7 +92,7 @@ public class Model {
     }
 
     public boolean isConcrete() {
-        return  !mixins.contains(name()) && !getRequired().isEmpty();
+        return  !(mixins.contains(name()) || (getRequired().isEmpty() && getConcreteParent().isEmpty()));
     }
 
     private Map<String, Object> getProperty(String prop, Model model) {
