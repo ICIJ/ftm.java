@@ -136,7 +136,7 @@ public class SourceGenerator {
         Optional<String> parent = getParent(model, parents);
         if (parent.isPresent()) {
             LinkedHashSet<String> grandParentsAttributes = getParentsAttributes(parents.get(parent.get()), parents);
-            List<String> parentAttributes = (List<String>) parents.getOrDefault(parent.get(), new HashMap<>()).get("required");
+            List<String> parentAttributes = getRequired(parents.getOrDefault(parent.get(), new HashMap<>()));
             grandParentsAttributes.addAll(parentAttributes);
             return grandParentsAttributes;
         } else {
@@ -146,36 +146,40 @@ public class SourceGenerator {
 
     private static Optional<String> getParent(Map<String, Object> model, Map<String, Map<String, Object>> parents) {
         List<String> extendz = getExtends(model);
-        List<String> parentRequired = extendz.stream().filter(p -> parents.getOrDefault(p, new HashMap<>()).get("required") != null).collect(Collectors.toList());
-        if (parentRequired.size()>1) {
-            logger.warn("got 2 parents for {} with required fields {} using the first", model.get("label"), parentRequired);
-            return Optional.of(parentRequired.get(0));
-        } else if (parentRequired.isEmpty()) {
+        List<String> concreteParents = extendz.stream().filter(p -> isConcrete(parents.getOrDefault(p, new HashMap<>()))).collect(Collectors.toList());
+        if (concreteParents.size()>1) {
+            logger.warn("got 2 concrete parents ({}) for {}, using the first", concreteParents, model.get("label"));
+            return Optional.of(concreteParents.get(0));
+        } else if (concreteParents.isEmpty()) {
             // this is fragile. It works because the multiple inheritance is ending with diamonds
-            logger.debug("got no parent for {} with required fields, searching in grand-parents", model.get("label"));
-            Set<Optional<String>> grandParentsRequired = extendz.stream()
+            logger.debug("got no concrete parent for {}, searching in grand-parents", model.get("label"));
+            Set<Optional<String>> concreteGrandParents = extendz.stream()
                     .map(parents::get)
                     .map(m -> getParent(m, parents))
                     .filter(Optional::isPresent).collect(Collectors.toSet());
-            if (!grandParentsRequired.isEmpty()) {
-                if (grandParentsRequired.size() > 1) {
-                    logger.warn("got {} grand-parents with required fields returning first", grandParentsRequired);
+            if (!concreteGrandParents.isEmpty()) {
+                if (concreteGrandParents.size() > 1) {
+                    logger.warn("got {} concrete grand-parents, returning first", concreteGrandParents);
                 }
-                return grandParentsRequired.iterator().next();
+                return concreteGrandParents.iterator().next();
             }
             return Optional.empty();
         } else {
-            return Optional.of(parentRequired.get(0));
+            return Optional.of(concreteParents.get(0));
         }
     }
 
     private static String getInheritanceString(Map<String, Object> model, Map<String, Map<String, Object>> parents) {
         Optional<String> javaExtend = getParent(model, parents);
         List<String> extendz = getExtends(model);
-        List<String> implementsList = extendz.stream().filter(p -> parents.getOrDefault(p, new HashMap<>()).get("required") == null).collect(Collectors.toList());
+        List<String> implementsList = extendz.stream().filter(p -> !isConcrete(parents.getOrDefault(p, new HashMap<>()))).collect(Collectors.toList());
         String extendsString = javaExtend.isPresent() ? format("extends %s ", javaExtend.get()): "";
         String implementsString = implementsList.isEmpty() ? "" : format("implements %s ", String.join(", ", implementsList));
         return extendz.isEmpty() ? "" : extendsString + implementsString;
+    }
+
+    private static boolean isConcrete(Map<String, Object> model) {
+        return !getRequired(model).isEmpty();
     }
 
     private static String concatenate(String parentsStringProperties, String stringProperties) {
@@ -184,7 +188,7 @@ public class SourceGenerator {
     }
 
     private static List<String> getRequired(Map<String, Object> model) {
-        return (List<String>) ofNullable(model.get("required")).orElse(new ArrayList<>());
+        return (List<String>) model.getOrDefault("required", new ArrayList<>());
     }
 
     private static List<String> getExtends(Map<String, Object> model) {
