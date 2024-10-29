@@ -2,8 +2,6 @@ package org.icij.ftm;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snakeyaml.engine.v2.api.Load;
-import org.snakeyaml.engine.v2.api.LoadSettings;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -48,11 +46,11 @@ public class SourceGenerator {
                 ofNullable(this.properties.get("parents")).orElse(new HashMap<>());
         Model model = new Model(Utils.getYamlContent(path.toFile()), parents);
 
-        List<String> required = model.getRequired();
+        List<String> required = model.required();
         String inheritanceString = getInheritanceString(model);
 
         if (model.isConcrete()) {
-            List<String> parentsAttributes = new ArrayList<>(model.getParentsAttributes());
+            List<String> parentsAttributes = new ArrayList<>(model.parentsAttributes());
             List<String> modelAttributes = required.stream().filter(a -> !parentsAttributes.contains(a)).toList();
 
             String parentsStringProperties = new AttributeHandlerForSignature(model).generateFor(parentsAttributes);
@@ -104,8 +102,8 @@ public class SourceGenerator {
     }
 
     private static String getConstructor(Model model) {
-        List<String> parentAttributes = new ArrayList<>(model.getParentsAttributes());
-        List<String> required = model.getRequired();
+        List<String> parentAttributes = new ArrayList<>(model.parentsAttributes());
+        List<String> required = model.required();
         if (!parentAttributes.isEmpty()) {
             return format("super(%s);\n", String.join(", ", parentAttributes)) + required.stream().filter(a -> !parentAttributes.contains(a)).map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
         } else {
@@ -114,7 +112,7 @@ public class SourceGenerator {
     }
 
     private static String getInheritanceString(Model model) {
-        Optional<String> javaExtend = model.getConcreteParent();
+        Optional<String> javaExtend = model.concreteParent();
         List<String> extendz = model.getExtends();
         List<String> implementsList = extendz.stream().filter(p -> model.parents.get(p) == null || !model.parents.get(p).isConcrete()).collect(Collectors.toList());
         String extendsString = model.isConcrete() && javaExtend.isPresent() ? format("extends %s ", javaExtend.get()): "";
@@ -143,7 +141,7 @@ public class SourceGenerator {
         String generateFor(List<String> attributes) {
             StringBuilder stringProperties = new StringBuilder();
             for (String prop: attributes) {
-                Map<String, Object> property = model.getProperty(prop);
+                Map<String, Object> property = model.property(prop);
                 if (property != null) {
                     if ("entity".equals(property.get("type"))) {
                         addPropertyForEntity(stringProperties, prop, property);

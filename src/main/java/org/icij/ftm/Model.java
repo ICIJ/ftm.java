@@ -38,7 +38,7 @@ public class Model {
         return yaml.keySet().iterator().next();
     }
 
-    public Optional<String> getConcreteParent() {
+    public Optional<String> concreteParent() {
         List<String> extendz = getExtends();
         List<String> concreteParents = extendz.stream().filter(p -> parents.get(p) == null || parents.get(p).isConcrete()).collect(Collectors.toList());
         if (concreteParents.size()>1) {
@@ -49,7 +49,7 @@ public class Model {
             logger.debug("got no concrete parent for {}, searching in grand-parents", label());
             Set<Optional<String>> concreteGrandParents = extendz.stream()
                     .map(parents::get)
-                    .map(Model::getConcreteParent)
+                    .map(Model::concreteParent)
                     .filter(Optional::isPresent).collect(Collectors.toSet());
             if (!concreteGrandParents.isEmpty()) {
                 if (concreteGrandParents.size() > 1) {
@@ -63,19 +63,19 @@ public class Model {
         }
     }
 
-    public LinkedHashSet<String> getParentsAttributes() {
-        return getParentsAttributes(this);
+    public LinkedHashSet<String> parentsAttributes() {
+        return parentsAttributes(this);
     }
 
-    public Map<String, Object> getProperty(String prop) {
-        return getProperty(prop, this);
+    public Map<String, Object> property(String prop) {
+        return property(prop, this);
     }
 
     public Map<String, Object> description() {
         return (Map<String, Object>) yaml.get(name());
     }
 
-    public List<String> getRequired() {
+    public List<String> required() {
         return (List<String>) description().getOrDefault("required", new ArrayList<>());
     }
 
@@ -105,24 +105,24 @@ public class Model {
      * @return true if the model can be a Class or Record
      */
     public boolean isConcrete() {
-        return  !(mixins.contains(name()) || (getRequired().isEmpty() && getConcreteParent().isEmpty()));
+        return  !(mixins.contains(name()) || (required().isEmpty() && concreteParent().isEmpty()));
     }
 
-    private Map<String, Object> getProperty(String prop, Model model) {
+    private Map<String, Object> property(String prop, Model model) {
         Map<String, Object> property = (Map<String, Object>) model.properties().get(prop);
         if (property == null) {
-            Optional<String> parent = model.getConcreteParent();
-            return parent.map(s -> getProperty(prop, parents.get(s))).orElse(null);
+            Optional<String> parent = model.concreteParent();
+            return parent.map(s -> property(prop, parents.get(s))).orElse(null);
         } else {
             return property;
         }
     }
 
-    private LinkedHashSet<String> getParentsAttributes(Model model) {
-        Optional<String> parentName = model.getConcreteParent();
+    private LinkedHashSet<String> parentsAttributes(Model model) {
+        Optional<String> parentName = model.concreteParent();
         if (parentName.isPresent()) {
-            LinkedHashSet<String> grandParentsAttributes = getParentsAttributes(parents.get(parentName.get()));
-            List<String> parentAttributes = parents.get(parentName.get()).getRequired();
+            LinkedHashSet<String> grandParentsAttributes = parentsAttributes(parents.get(parentName.get()));
+            List<String> parentAttributes = parents.get(parentName.get()).required();
             grandParentsAttributes.addAll(parentAttributes);
             return grandParentsAttributes;
         } else {
