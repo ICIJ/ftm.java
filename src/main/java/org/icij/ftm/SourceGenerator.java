@@ -89,7 +89,7 @@ public class SourceGenerator {
                     package org.icij.ftm;
                     
                     /**
-                     * Automatically generated class for FtM model. Do not update this class.
+                     * Automatically generated interface for FtM model. Do not update this class.
                      * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema/%s.yaml">%s</a>.
                     */
                     public interface %s %s{};

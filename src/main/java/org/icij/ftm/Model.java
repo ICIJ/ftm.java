@@ -22,7 +22,7 @@ import static java.lang.String.format;
  *   parents instance is the same reference for all Model objects event if it is not static because harder to test and initialize.
  * </p>
  * <p>
- *   yaml object is the original yaml Map<String, Object> read from FtM models. We use this object for equal/hash methods.
+ *   yaml object is the original yaml map read from FtM models. We use this object for equal/hash methods.
  * </p>
  * <p>
  *     mixins instance is here to "help" the mapping of Java classes with multiple inheritance FtM models.
