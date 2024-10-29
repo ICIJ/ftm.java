@@ -16,6 +16,18 @@ import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
+/**
+ * Java encapsulation of Map of Map YAML models. It makes easier to manipulate models and centralize code generation rules.
+ * <p>
+ *   parents instance is the same reference for all Model objects event if it is not static because harder to test and initialize.
+ * </p>
+ * <p>
+ *   yaml object is the original yaml Map<String, Object> read from FtM models. We use this object for equal/hash methods.
+ * </p>
+ * <p>
+ *     mixins instance is here to "help" the mapping of Java classes with multiple inheritance FtM models.
+ * </p>
+ */
 public class Model {
     private final static Logger logger = LoggerFactory.getLogger(Model.class);
     final Map<String, Model> parents;
@@ -38,6 +50,10 @@ public class Model {
         return yaml.keySet().iterator().next();
     }
 
+    /**
+     * Recursive method to find a concrete parent (java class) for the current model.
+     * @return the parent string model name with isConcrete = true from the inheritance tree.
+     */
     public Optional<String> concreteParent() {
         List<String> extendz = getExtends();
         List<String> concreteParents = extendz.stream().filter(p -> parents.get(p) == null || parents.get(p).isConcrete()).collect(Collectors.toList());
