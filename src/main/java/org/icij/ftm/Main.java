@@ -15,7 +15,7 @@ import static org.icij.ftm.Utils.propertiesFromMap;
  * Java source files are generated for maven project in target/generated-sources.
  */
 public class Main {
-    public static final String SCHEMA_URL = "https://api.github.com/repos/ICIJ/followthemoney/contents/followthemoney/schema";
+    public static final String SCHEMA_URL = "https://api.github.com/repos/alephdata/followthemoney/contents/followthemoney/schema";
 
     public static void main(String[] args) throws Exception {
         Path destDir = Path.of("target", "generated-sources", "org", "icij", "ftm");
