@@ -1,14 +1,12 @@
 package org.icij.ftm;
 
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Map;
 
 import static java.util.Map.of;
@@ -33,7 +31,7 @@ public class SourceGeneratorTest {
         Path path = getPath("Thing.yaml");
         SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Map.of("Thing", Map.of()))));
         assertThat(sourceGenerator.generate(path)).contains("package org.icij.ftm;");
-        assertThat(sourceGenerator.generate(path)).contains("public class Thing {");
+        assertThat(sourceGenerator.generate(path)).contains("public abstract class Thing {");
         assertThat(sourceGenerator.generate(path)).contains("final String name;");
         assertThat(sourceGenerator.generate(path)).contains("public Thing (String name) {");
         assertThat(sourceGenerator.generate(path)).contains("this.name = name;");

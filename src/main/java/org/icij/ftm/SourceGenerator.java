@@ -5,9 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.snakeyaml.engine.v2.api.Load;
 import org.snakeyaml.engine.v2.api.LoadSettings;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -28,7 +25,6 @@ import static java.util.Optional.ofNullable;
 public class SourceGenerator {
     private final static Logger logger = LoggerFactory.getLogger(SourceGenerator.class);
     private final Properties properties;
-    private static final Load yaml = new Load(LoadSettings.builder().build());
 
     private static final Map<String, String> nativeTypeMapping = Map.of(
             "number", "int",
@@ -50,7 +46,7 @@ public class SourceGenerator {
         logger.info("generating java class for {} model", path.getFileName());
         Map<String, Model> parents = (Map<String, Model>)
                 ofNullable(this.properties.get("parents")).orElse(new HashMap<>());
-        Model model = new Model(getYamlContent(path.toFile()), parents);
+        Model model = new Model(Utils.getYamlContent(path.toFile()), parents);
 
         List<String> required = model.getRequired();
         String inheritanceString = getInheritanceString(model);
@@ -72,13 +68,13 @@ public class SourceGenerator {
                          * Automatically generated class for FtM model. Do not update this class.
                          * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema/%s.yaml">%s</a>.
                          */
-                        public class %s %s{
+                        public %sclass %s %s{
                             %s
                             public %s (%s) {
                                 %s
                             }
                         }
-                        """, model.name(), model.name(), model.name(), inheritanceString, classAttributes, model.name(), concatenate(parentsStringProperties, stringProperties), classAttributesAssignation);
+                        """, model.name(), model.name(), getAbstract(model), model.name(), inheritanceString, classAttributes, model.name(), concatenate(parentsStringProperties, stringProperties), classAttributesAssignation);
             } else {
                 return format("""
                         package org.icij.ftm;
@@ -101,6 +97,10 @@ public class SourceGenerator {
                     public interface %s %s{};
                     """, model.name(), model.name(), model.name(), inheritanceString);
         }
+    }
+
+    private String getAbstract(Model model) {
+        return model.isAbstract() ? "abstract ": "";
     }
 
     private static String getConstructor(Model model) {
@@ -127,10 +127,6 @@ public class SourceGenerator {
     private static String concatenate(String parentsStringProperties, String stringProperties) {
         return parentsStringProperties.isEmpty() ? stringProperties : parentsStringProperties +
                 (stringProperties.isEmpty() ? "" : ", " + stringProperties);
-    }
-
-    static Map<String, Object> getYamlContent(File yamlFile) throws FileNotFoundException {
-        return (Map<String, Object>) yaml.loadFromInputStream(new FileInputStream(yamlFile));
     }
 
     private static String sanitizedProp(String prop) {

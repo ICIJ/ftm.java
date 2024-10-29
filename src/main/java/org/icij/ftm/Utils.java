@@ -2,8 +2,11 @@ package org.icij.ftm;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.snakeyaml.engine.v2.api.Load;
+import org.snakeyaml.engine.v2.api.LoadSettings;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
@@ -12,7 +15,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -21,7 +23,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -30,6 +31,7 @@ import static java.util.stream.Collectors.toMap;
  * other classes.
  */
 public class Utils {
+    private static final Load yaml = new Load(LoadSettings.builder().build());
     public static Properties propertiesFromMap(Map<String, Object> map) {
         Properties props = new Properties();
         props.putAll(map);
@@ -61,7 +63,7 @@ public class Utils {
         Set<String> parentNames = new LinkedHashSet<>();
         Map<String, Map<String, Object>> modelsMap = new HashMap<>();
         for (File file: yamlFiles) {
-            Map<String, Object> yamlContent = SourceGenerator.getYamlContent(file);
+            Map<String, Object> yamlContent = getYamlContent(file);
             Model model = new Model(yamlContent);
             parentNames.addAll(model.getExtends());
             modelsMap.put(model.name(), yamlContent);
@@ -77,5 +79,9 @@ public class Utils {
     static String getJavaFileName(File yamlFile) {
         int dotIndex = yamlFile.getName().lastIndexOf('.');
         return yamlFile.getName().substring(0, dotIndex) + ".java";
+    }
+
+    static Map<String, Object> getYamlContent(File yamlFile) throws FileNotFoundException {
+        return (Map<String, Object>) yaml.loadFromInputStream(new FileInputStream(yamlFile));
     }
 }

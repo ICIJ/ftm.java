@@ -87,10 +87,23 @@ public class Model {
         return (Map<String, Object>) description().getOrDefault("properties", new HashMap<>());
     }
 
+    public boolean isAbstract() {
+        return (boolean) description().getOrDefault("abstract", false);
+    }
+
     public String label() {
         return (String) description().get("label");
     }
 
+    /**
+     * Warning that isConcrete is not !isAbstract. isConcrete is more in a Java sense
+     * a structure (Class, Record) that can hold values whereas isAbstract is the exact
+     * value from FtM models.
+     * This could change in the future: do we need to harmonize this?
+     * If so how could we avoid to store for example Thing.name in all daughters of Thing?
+     *
+     * @return true if the model can be a Class or Record
+     */
     public boolean isConcrete() {
         return  !(mixins.contains(name()) || (getRequired().isEmpty() && getConcreteParent().isEmpty()));
     }
