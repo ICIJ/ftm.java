@@ -164,8 +164,8 @@ public class Model {
     private Map<String, Object> property(String prop, Model model) {
         Map<String, Object> property = (Map<String, Object>) model.properties().get(prop);
         if (property == null) {
-            Optional<String> parent = model.concreteParent();
-            return parent.map(s -> property(prop, parents.get(s))).orElse(null);
+            List<String> extendz = model.getExtends();
+            return extendz.stream().map(s -> property(prop, parents.get(s))).filter(Objects::nonNull).findFirst().orElse(null);
         } else {
             return property;
         }

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -28,6 +29,9 @@ public class SourceGenerator {
             "number", "int",
             "url", "URL"
     );
+    private static final Map<String, String> imports = Map.of(
+            "URL",  "java.net.URL"
+    );
     private static final Map<String, String> jvmReservedWords = Map.of(
             "case", "caze"
     );
@@ -42,9 +46,9 @@ public class SourceGenerator {
 
     public String generate(Path path) throws IOException {
         logger.info("generating java class for {} model", path.getFileName());
-        Map<String, Model> parents = (Map<String, Model>)
-                ofNullable(this.properties.get("parents")).orElse(new HashMap<>());
-        Model model = new Model(Utils.getYamlContent(path.toFile()), parents);
+        Map<String, Model> parents = (Map<String, Model>) ofNullable(this.properties.get("parents")).orElse(new HashMap<>());
+        Model.Mode attributeMode = Model.Mode.valueOf((String) this.properties.getOrDefault("attributeMode", "REQUIRED"));
+        Model model = new Model(Utils.getYamlContent(path.toFile()), parents, attributeMode);
 
         String inheritanceString = getInheritanceString(model);
 
@@ -56,10 +60,13 @@ public class SourceGenerator {
             String stringProperties = new AttributeHandlerForSignature(model).generateFor(modelAttributes);
             String classAttributes = new AttributeHandlerForAttrs(model).generateFor(modelAttributes);
             String classAttributesAssignation = getConstructor(model);
+            String imports = getImports(concatenate(parentsStringProperties, stringProperties));
 
             if (parents.containsKey(model.name()) || inheritanceString.contains("extends")) {
                 return format("""
                         package org.icij.ftm;
+                        
+                        %s
                                 
                         /**
                          * Automatically generated class for FtM model. Do not update this class.
@@ -71,17 +78,19 @@ public class SourceGenerator {
                                 %s
                             }
                         }
-                        """, model.name(), model.name(), getAbstract(model), model.name(), inheritanceString, classAttributes, model.name(), concatenate(parentsStringProperties, stringProperties), classAttributesAssignation);
+                        """, imports, model.name(), model.name(), getAbstract(model), model.name(), inheritanceString, classAttributes, model.name(), concatenate(parentsStringProperties, stringProperties), classAttributesAssignation);
             } else {
                 return format("""
                         package org.icij.ftm;
+                         
+                         %s
                          
                         /**
                          * Automatically generated record for FtM model. Do not update this record.
                          * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema/%s.yaml">%s</a>.
                          */
                         public record %s(%s) %s{};
-                        """, model.name(), model.name(), model.name(), stringProperties, inheritanceString);
+                        """, imports, model.name(), model.name(), model.name(), stringProperties, inheritanceString);
             }
         } else {
             return format("""
@@ -94,6 +103,14 @@ public class SourceGenerator {
                     public interface %s %s{};
                     """, model.name(), model.name(), model.name(), inheritanceString);
         }
+    }
+
+    private String getImports(String codeString) {
+        return nativeTypeMapping.values().stream()
+                .filter(codeString::contains)
+                .filter(t -> ofNullable(imports.get(t)).isPresent())
+                .map(t -> format("import %s;", imports.get(t)))
+                .collect(Collectors.joining("\n"));
     }
 
     private String getAbstract(Model model) {

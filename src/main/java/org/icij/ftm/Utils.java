@@ -60,6 +60,10 @@ public class Utils {
     }
 
     static Map<String, Model> findParents(File[] yamlFiles) throws FileNotFoundException {
+        return findParents(yamlFiles, Model.Mode.REQUIRED);
+    }
+
+    static Map<String, Model> findParents(File[] yamlFiles, Model.Mode attributeMode) throws FileNotFoundException {
         Set<String> parentNames = new LinkedHashSet<>();
         Map<String, Map<String, Object>> modelsMap = new HashMap<>();
         for (File file: yamlFiles) {
@@ -71,7 +75,7 @@ public class Utils {
         Map<String, Map<String, Object>> mapOfMap = modelsMap.entrySet().stream().filter(e -> parentNames.contains(e.getKey())).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<String, Model> parents = new HashMap<>();
         for (Map.Entry<String, Map<String, Object>> entry: mapOfMap.entrySet()) {
-            parents.put(entry.getKey(), new Model(entry.getValue(), parents));
+            parents.put(entry.getKey(), new Model(entry.getValue(), parents, attributeMode));
         }
         return parents;
     }

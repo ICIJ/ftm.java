@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 
 import static java.util.stream.Collectors.toMap;
 import static org.icij.ftm.Utils.propertiesFromMap;
@@ -20,10 +21,16 @@ public class Main {
     public static void main(String[] args) throws Exception {
         Path destDir = Path.of("target", "generated-sources", "org", "icij", "ftm");
         destDir.toFile().mkdirs();
-
         Path yamlFilesDir = Utils.downloadYamlModels(URI.create(SCHEMA_URL));
         File[] yamlFiles = Objects.requireNonNull(yamlFilesDir.toFile().listFiles());
-        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(Map.of("parents", Utils.findParents(yamlFiles))));
+        Model.Mode attributeMode = Model.Mode.REQUIRED;
+        Properties properties = propertiesFromMap(Map.of(
+                "parents", Utils.findParents(yamlFiles, attributeMode),
+                "attributeMode", attributeMode.name()
+        ));
+
+        SourceGenerator sourceGenerator = new SourceGenerator(properties);
+
         for (File yamlFile: yamlFiles) {
             String javaSource = sourceGenerator.generate(yamlFile.toPath());
             Files.writeString(destDir.resolve(Utils.getJavaFileName(yamlFile)), javaSource);

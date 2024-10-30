@@ -38,6 +38,14 @@ public class SourceGeneratorTest {
     }
 
     @Test
+    public void test_generate_thing_with_url_imported() throws IOException {
+        Path path = getPath("Thing.yaml");
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("attributeMode", "FULL", "parents", Map.of("Thing", Map.of()))));
+        assertThat(sourceGenerator.generate(path)).contains("final URL sourceUrl;");
+        assertThat(sourceGenerator.generate(path)).contains("import java.net.URL;");
+    }
+
+    @Test
     public void test_call_super_in_daughter_class() throws IOException {
         Path path = getPath("CallForTenders.yaml");
         SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[] {

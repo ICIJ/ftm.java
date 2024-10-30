@@ -6,7 +6,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -69,6 +68,16 @@ public class ModelTest {
                 "processingError",
                 "processingAgent",
                 "processedAt"));
+    }
+
+    @Test
+    public void test_get_recursive_property() throws Exception {
+        Model document = new Model(loadYaml("Document.yaml"), Utils.findParents(new File[]{
+                getFile("Document.yaml"),
+                getFile("Analyzable.yaml"),
+                getFile("Thing.yaml")
+        }));
+        assertThat(document.property("ibanMentioned")).isNotNull();
     }
 
     private static Map<String, Object> loadYaml(String name) throws FileNotFoundException {
