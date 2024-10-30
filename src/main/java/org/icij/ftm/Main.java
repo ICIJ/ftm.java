@@ -28,7 +28,8 @@ public class Main {
         Properties properties = propertiesFromMap(Map.of(
                 "parents", Utils.findParents(yamlFiles, attributeMode),
                 "models", Arrays.stream(yamlFiles).map(File::getName).map(s -> s.substring(0, s.indexOf("."))).toList(),
-                "attributeMode", attributeMode.name()
+                "attributeMode", attributeMode.name(),
+                "interfaces", true
         ));
 
         SourceGenerator sourceGenerator = new SourceGenerator(properties);
