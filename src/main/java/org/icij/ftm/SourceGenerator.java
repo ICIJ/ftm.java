@@ -5,13 +5,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -56,9 +56,9 @@ public class SourceGenerator {
             List<String> parentsAttributes = model.parentsAttributes();
             List<String> modelAttributes = model.attributes().stream().filter(a -> !parentsAttributes.contains(a)).toList();
 
-            String parentsStringProperties = new AttributeHandlerForSignature(model).generateFor(parentsAttributes);
-            String stringProperties = new AttributeHandlerForSignature(model).generateFor(modelAttributes);
-            String classAttributes = new AttributeHandlerForAttrs(model).generateFor(modelAttributes);
+            String parentsStringProperties = new AttributeHandlerForSignature(model, this::javaType).generateFor(parentsAttributes);
+            String stringProperties = new AttributeHandlerForSignature(model, this::javaType).generateFor(modelAttributes);
+            String classAttributes = new AttributeHandlerForAttrs(model, this::javaType).generateFor(modelAttributes);
             String classAttributesAssignation = getConstructor(model);
             String imports = getImports(concatenate(parentsStringProperties, stringProperties));
 
@@ -147,23 +147,30 @@ public class SourceGenerator {
         return ofNullable(jvmReservedWords.get(prop)).orElse(prop);
     }
 
+    public String generateMethods(Model model) {
+        return model.attributes().stream().map(a -> format("%s %s();", javaType(model.type(a)), a)).collect(Collectors.joining("\n"));
+    }
+
+    String javaType(String ftmType) {
+        return nativeTypeMapping.getOrDefault(ftmType,
+                ((List<String>)properties.getOrDefault("models", new LinkedList<>())).contains(ftmType)? ftmType: "String");
+    }
+
     static class AttributeHandlerForSignature {
         private final Model model;
+        private final Function<String, String> typeMapping;
 
-        public AttributeHandlerForSignature(Model model) {
+        public AttributeHandlerForSignature(Model model, Function<String, String> typeMapping) {
             this.model = model;
+            this.typeMapping = typeMapping;
         }
 
         String generateFor(List<String> attributes) {
             StringBuilder stringProperties = new StringBuilder();
             for (String prop: attributes) {
-                Map<String, Object> property = model.property(prop);
-                if (property != null) {
-                    if ("entity".equals(property.get("type"))) {
-                        addPropertyForEntity(stringProperties, prop, property);
-                    } else {
-                        addPropertyForNativeType(stringProperties, prop, property);
-                    }
+                String type = typeMapping.apply(model.type(prop));
+                if (type != null) {
+                    addProperty(stringProperties, prop, type);
                     if (!prop.equals(attributes.get(attributes.size() - 1))) {
                         addSeparator(stringProperties);
                     }
@@ -176,41 +183,19 @@ public class SourceGenerator {
             stringProperties.append(", ");
         }
 
-        protected void addPropertyForEntity(StringBuilder stringProperties, String prop, Map<String, Object> property) {
-            stringProperties.append(ofNullable(property.get("range")).orElse("String"))
-                    .append(" ")
-                    .append(sanitizedProp(prop));
-        }
-
-        protected void addPropertyForNativeType(StringBuilder stringProperties, String prop, Map<String, Object> property) {
-            // should have a type but CallForTenders.title has no type
-            String type = (String) ofNullable(property.get("type")).orElse("");
-            stringProperties.append(ofNullable(nativeTypeMapping.get(type)).orElse("String"))
-                    .append(" ")
-                    .append(sanitizedProp(prop));
+        protected void addProperty(StringBuilder stringProperties, String prop, String type) {
+            stringProperties.append(type).append(" ").append(sanitizedProp(prop));
         }
     }
 
     static class AttributeHandlerForAttrs extends AttributeHandlerForSignature {
-        public AttributeHandlerForAttrs(Model model) {
-            super(model);
+        public AttributeHandlerForAttrs(Model model, Function<String, String> typeMapping) {
+            super(model, typeMapping);
         }
 
         @Override
-        protected void addPropertyForEntity(StringBuilder stringProperties, String prop, Map<String, Object> property) {
-            stringProperties.append("final ")
-                    .append(ofNullable(property.get("range")).orElse("String"))
-                    .append(" ")
-                    .append(sanitizedProp(prop)).append(";");
-        }
-
-        @Override
-        protected void addPropertyForNativeType(StringBuilder stringProperties, String prop, Map<String, Object> property) {
-            String type = (String) ofNullable(property.get("type")).orElse("");
-            stringProperties.append("final ")
-                    .append(ofNullable(nativeTypeMapping.get(type)).orElse("String"))
-                    .append(" ")
-                    .append(sanitizedProp(prop)).append(";");
+        protected void addProperty(StringBuilder stringProperties, String prop, String type) {
+            stringProperties.append("final ").append(type).append(" ").append(sanitizedProp(prop)).append(";");
         }
 
         protected void addSeparator(StringBuilder stringProperties) {

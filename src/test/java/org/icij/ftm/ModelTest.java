@@ -80,6 +80,19 @@ public class ModelTest {
         assertThat(document.property("ibanMentioned")).isNotNull();
     }
 
+    @Test
+    public void test_get_property_type() throws Exception {
+        Model document = new Model(loadYaml("Document.yaml"), Utils.findParents(new File[]{
+                getFile("Document.yaml"),
+                getFile("Analyzable.yaml"),
+                getFile("Thing.yaml")
+        }));
+        assertThat(document.type("ibanMentioned")).isEqualTo("iban");
+        assertThat(document.type("extension")).isEqualTo("string");
+        assertThat(document.type("parent")).isEqualTo("Folder");
+        assertThat(document.type("title")).isEqualTo("string");
+    }
+
     private static Map<String, Object> loadYaml(String name) throws FileNotFoundException {
         return Utils.getYamlContent(getFile(name));
     }

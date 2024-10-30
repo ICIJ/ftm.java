@@ -15,6 +15,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -87,5 +88,9 @@ public class Utils {
 
     static Map<String, Object> getYamlContent(File yamlFile) throws FileNotFoundException {
         return (Map<String, Object>) yaml.loadFromInputStream(new FileInputStream(yamlFile));
+    }
+
+    static Path pathFromLoader(String name) {
+        return Paths.get(ClassLoader.getSystemResource(name).getPath());
     }
 }

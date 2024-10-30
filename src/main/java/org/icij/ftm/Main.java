@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -26,6 +27,7 @@ public class Main {
         Model.Mode attributeMode = Model.Mode.REQUIRED;
         Properties properties = propertiesFromMap(Map.of(
                 "parents", Utils.findParents(yamlFiles, attributeMode),
+                "models", Arrays.stream(yamlFiles).map(File::getName).map(s -> s.substring(0, s.indexOf("."))).toList(),
                 "attributeMode", attributeMode.name()
         ));
 

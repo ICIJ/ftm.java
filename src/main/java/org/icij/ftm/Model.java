@@ -32,12 +32,11 @@ import static java.util.stream.Stream.concat;
  */
 public class Model {
     private final static Logger logger = LoggerFactory.getLogger(Model.class);
-    public enum Mode {REQUIRED, FEATURED, FULL}
+    public enum Mode {REQUIRED, FEATURED, FULL;}
     final Map<String, Model> parents;
     private final Mode mode;
     private final Map<String, Object> yaml;
     private static final Set<String> mixins = new LinkedHashSet<>(List.of("Asset", "Folder", "PlainText", "HyperText"));
-
     public Model(Map<String, Object> yamlContent) {
         this(yamlContent, new HashMap<>());
     }
@@ -90,9 +89,11 @@ public class Model {
 
     /**
      * get the attributes of the model.
-     * It gets the required attributes if Mode.REQUIRED is provided to constructor (default)
-     * It gets the required attributes concatenated to featured attributes if in Mode.FEATURED
-     * It gets all the attributes from properties starting with required and featured attributes if in Mode.FULL
+     * <ul>
+     * <li>It gets the required attributes if Mode.REQUIRED is provided to constructor (default)</li>
+     * <li>It gets the required attributes concatenated to featured attributes if in Mode.FEATURED</li>
+     * <li>It gets all the attributes from properties starting with required and featured attributes if in Mode.FULL</li>
+     * </ul>
      * <p>
      * All duplicates are removed.
      * </p>
@@ -118,6 +119,15 @@ public class Model {
 
     public Map<String, Object> property(String prop) {
         return property(prop, this);
+    }
+
+    public String type(String prop) {
+        Map<String, Object> property = property(prop);
+        if ("entity".equals(property.get("type"))) {
+            return (String) property.get("range");
+        } else {
+            return (String) property.getOrDefault("type", "string");
+        }
     }
 
     public Map<String, Object> description() {
