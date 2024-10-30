@@ -46,12 +46,11 @@ public class SourceGenerator {
                 ofNullable(this.properties.get("parents")).orElse(new HashMap<>());
         Model model = new Model(Utils.getYamlContent(path.toFile()), parents);
 
-        List<String> required = model.required();
         String inheritanceString = getInheritanceString(model);
 
         if (model.isConcrete()) {
             List<String> parentsAttributes = new ArrayList<>(model.parentsAttributes());
-            List<String> modelAttributes = required.stream().filter(a -> !parentsAttributes.contains(a)).toList();
+            List<String> modelAttributes = model.required().stream().filter(a -> !parentsAttributes.contains(a)).toList();
 
             String parentsStringProperties = new AttributeHandlerForSignature(model).generateFor(parentsAttributes);
             String stringProperties = new AttributeHandlerForSignature(model).generateFor(modelAttributes);
@@ -78,7 +77,7 @@ public class SourceGenerator {
                         package org.icij.ftm;
                          
                         /**
-                         * Automatically generated record for FtM model. Do not update this class.
+                         * Automatically generated record for FtM model. Do not update this record.
                          * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema/%s.yaml">%s</a>.
                          */
                         public record %s(%s) %s{};
@@ -89,7 +88,7 @@ public class SourceGenerator {
                     package org.icij.ftm;
                     
                     /**
-                     * Automatically generated interface for FtM model. Do not update this class.
+                     * Automatically generated interface for FtM model. Do not update this interface.
                      * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema/%s.yaml">%s</a>.
                     */
                     public interface %s %s{};
