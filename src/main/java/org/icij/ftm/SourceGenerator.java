@@ -51,6 +51,7 @@ public class SourceGenerator {
         Model model = new Model(Utils.getYamlContent(path.toFile()), parents, attributeMode);
 
         String inheritanceString = getInheritanceString(model);
+        String methods = generateMethods(model);
 
         if (model.isConcrete()) {
             List<String> parentsAttributes = model.parentsAttributes();
@@ -60,7 +61,7 @@ public class SourceGenerator {
             String stringProperties = new AttributeHandlerForSignature(model, this::javaType).generateFor(modelAttributes);
             String classAttributes = new AttributeHandlerForAttrs(model, this::javaType).generateFor(modelAttributes);
             String classAttributesAssignation = getConstructor(model);
-            String imports = getImports(concatenate(parentsStringProperties, stringProperties));
+            String importString = getImports(concatenate(parentsStringProperties, stringProperties));
 
             if (parents.containsKey(model.name()) || inheritanceString.contains("extends")) {
                 return format("""
@@ -78,30 +79,34 @@ public class SourceGenerator {
                                 %s
                             }
                         }
-                        """, imports, model.name(), model.name(), getAbstract(model), model.name(), inheritanceString, classAttributes, model.name(), concatenate(parentsStringProperties, stringProperties), classAttributesAssignation);
+                        """, importString, model.name(), model.name(), getAbstract(model), model.name(), inheritanceString, classAttributes, model.name(), concatenate(parentsStringProperties, stringProperties), classAttributesAssignation);
             } else {
                 return format("""
                         package org.icij.ftm;
                          
-                         %s
+                        %s
                          
                         /**
                          * Automatically generated record for FtM model. Do not update this record.
                          * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema/%s.yaml">%s</a>.
                          */
                         public record %s(%s) %s{};
-                        """, imports, model.name(), model.name(), model.name(), stringProperties, inheritanceString);
+                        """, importString, model.name(), model.name(), model.name(), stringProperties, inheritanceString);
             }
         } else {
             return format("""
                     package org.icij.ftm;
                     
+                    %s
+                    
                     /**
                      * Automatically generated interface for FtM model. Do not update this interface.
                      * @see <a href="https://github.com/alephdata/followthemoney/blob/main/followthemoney/schema/%s.yaml">%s</a>.
                     */
-                    public interface %s %s{};
-                    """, model.name(), model.name(), model.name(), inheritanceString);
+                    public interface %s %s{
+                    %s
+                    }
+                    """, getImports(methods), model.name(), model.name(), model.name(), inheritanceString, methods);
         }
     }
 
@@ -114,7 +119,9 @@ public class SourceGenerator {
     }
 
     private String getAbstract(Model model) {
-        return model.isAbstract() ? "abstract ": "";
+        return model.isAbstract() ||
+                !model.getImplementsList().isEmpty() ||
+                !model.concreteParentModel().map(m -> m.getImplementsList().isEmpty()).orElse(false) ? "abstract ": "";
     }
 
     private static String getConstructor(Model model) {
@@ -129,13 +136,12 @@ public class SourceGenerator {
 
     private static String getInheritanceString(Model model) {
         Optional<String> javaExtend = model.concreteParent();
-        List<String> extendz = model.getExtends();
-        List<String> implementsList = extendz.stream().filter(p -> model.parents.get(p) == null || !model.parents.get(p).isConcrete()).collect(Collectors.toList());
+        List<String> implementsList = model.getImplementsList();
         String extendsString = model.isConcrete() && javaExtend.isPresent() ? format("extends %s ", javaExtend.get()): "";
         String implementsString = implementsList.isEmpty() ? "" : model.isConcrete() ?
                 format("implements %s ", String.join(", ", implementsList)):
                 format("extends %s ", String.join(", ", implementsList));
-        return extendz.isEmpty() ? "" : extendsString + implementsString;
+        return model.getExtends().isEmpty() ? "" : extendsString + implementsString;
     }
 
     private static String concatenate(String parentsStringProperties, String stringProperties) {
@@ -148,7 +154,7 @@ public class SourceGenerator {
     }
 
     public String generateMethods(Model model) {
-        return model.attributes().stream().map(a -> format("%s %s();", javaType(model.type(a)), a)).collect(Collectors.joining("\n"));
+        return model.attributes().stream().map(a -> format("\t%s %s();", javaType(model.type(a)), a)).collect(Collectors.joining("\n"));
     }
 
     String javaType(String ftmType) {

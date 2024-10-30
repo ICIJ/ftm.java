@@ -24,7 +24,7 @@ public class Main {
         destDir.toFile().mkdirs();
         Path yamlFilesDir = Utils.downloadYamlModels(URI.create(SCHEMA_URL));
         File[] yamlFiles = Objects.requireNonNull(yamlFilesDir.toFile().listFiles());
-        Model.Mode attributeMode = Model.Mode.REQUIRED;
+        Model.Mode attributeMode = Model.Mode.FEATURED;
         Properties properties = propertiesFromMap(Map.of(
                 "parents", Utils.findParents(yamlFiles, attributeMode),
                 "models", Arrays.stream(yamlFiles).map(File::getName).map(s -> s.substring(0, s.indexOf("."))).toList(),

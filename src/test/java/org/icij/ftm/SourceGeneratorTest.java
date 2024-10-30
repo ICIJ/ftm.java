@@ -100,7 +100,7 @@ public class SourceGeneratorTest {
     @Test
     public void test_generate_abstract() throws IOException {
         Path path = pathFromLoader("Analyzable.yaml");
-        assertThat(new SourceGenerator().generate(path)).contains("public interface Analyzable {};");
+        assertThat(new SourceGenerator().generate(path)).contains("public interface Analyzable {");
     }
 
     @Test
@@ -116,7 +116,7 @@ public class SourceGeneratorTest {
                 pathFromLoader("Message.yaml").toFile()}), "models", List.of("LegalEntity"))));
         String actualJava = sourceGenerator.generate(pathFromLoader("Message.yaml"));
         assertThat(actualJava).contains(
-                "public class Message extends Document implements Interval, Folder, PlainText, HyperText {");
+                "public abstract class Message extends Document implements Interval, Folder, PlainText, HyperText {");
         assertThat(actualJava).contains(
                 "public Message (String name, String fileName, String bodyText, LegalEntity sender)");
         assertThat(actualJava).contains("super(name, fileName);");
@@ -152,7 +152,7 @@ public class SourceGeneratorTest {
                 pathFromLoader("CallForTenders.yaml").toFile(),
                 pathFromLoader("Thing.yaml").toFile()}))));
         assertThat(sourceGenerator.generate(path)).contains(
-                "public class CallForTenders extends Thing implements Interval {");
+                "public abstract class CallForTenders extends Thing implements Interval {");
     }
 
     @Test
@@ -186,7 +186,7 @@ public class SourceGeneratorTest {
                 pathFromLoader("Pages.yaml").toFile()
         }))));
 
-        assertThat(sourceGenerator.generate(path)).contains("public class Pages extends Document {");
+        assertThat(sourceGenerator.generate(path)).contains("public abstract class Pages extends Document {");
     }
 
     @Test
@@ -209,5 +209,4 @@ public class SourceGeneratorTest {
         assertThat(code).contains("String mimeType();");
         assertThat(code).contains("Folder parent();");
     }
-
 }

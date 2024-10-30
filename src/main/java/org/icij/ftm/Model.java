@@ -32,7 +32,9 @@ import static java.util.stream.Stream.concat;
  */
 public class Model {
     private final static Logger logger = LoggerFactory.getLogger(Model.class);
+
     public enum Mode {REQUIRED, FEATURED, FULL;}
+
     final Map<String, Model> parents;
     private final Mode mode;
     private final Map<String, Object> yaml;
@@ -40,7 +42,6 @@ public class Model {
     public Model(Map<String, Object> yamlContent) {
         this(yamlContent, new HashMap<>());
     }
-
     public Model(Map<String, Object> modelMap, Map<String, Model> parents) {
         this(modelMap, parents, Mode.REQUIRED);
     }
@@ -85,6 +86,10 @@ public class Model {
         } else {
             return Optional.of(concreteParents.get(0));
         }
+    }
+
+    public Optional<Model> concreteParentModel() {
+        return concreteParent().map(parents::get);
     }
 
     /**
@@ -156,6 +161,10 @@ public class Model {
 
     public String label() {
         return (String) description().get("label");
+    }
+
+    public List<String> getImplementsList() {
+        return getExtends().stream().filter(p -> parents.get(p) == null || !parents.get(p).isConcrete()).collect(Collectors.toList());
     }
 
     /**
