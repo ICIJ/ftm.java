@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -15,6 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static java.util.stream.Stream.concat;
 
 /**
  * Java encapsulation of Map of Map YAML models. It makes easier to manipulate models and centralize code generation rules.
@@ -30,20 +32,27 @@ import static java.lang.String.format;
  */
 public class Model {
     private final static Logger logger = LoggerFactory.getLogger(Model.class);
+    public enum Mode {REQUIRED, FEATURED, FULL}
     final Map<String, Model> parents;
+    private final Mode mode;
     private final Map<String, Object> yaml;
     private static final Set<String> mixins = new LinkedHashSet<>(List.of("Asset", "Folder", "PlainText", "HyperText"));
 
-    public Model(Map<String, Object> modelMap, Map<String, Model> parents) {
-        this.yaml = Collections.unmodifiableMap(modelMap);
-        this.parents = Collections.unmodifiableMap(parents);;
-        if (yaml.size() > 1) {
-            throw new IllegalStateException(format("model should contain one definition, found %s", yaml.keySet()));
-        }
-    }
-
     public Model(Map<String, Object> yamlContent) {
         this(yamlContent, new HashMap<>());
+    }
+
+    public Model(Map<String, Object> modelMap, Map<String, Model> parents) {
+        this(modelMap, parents, Mode.REQUIRED);
+    }
+
+    public Model(Map<String, Object> modelMap, Map<String, Model> parents, Mode mode) {
+        if (modelMap.size() > 1) {
+            throw new IllegalStateException(format("model should contain one definition, found %s", modelMap.keySet()));
+        }
+        this.yaml = Collections.unmodifiableMap(modelMap);
+        this.parents = Collections.unmodifiableMap(parents);
+        this.mode = mode;
     }
 
     public String name() {
@@ -79,8 +88,32 @@ public class Model {
         }
     }
 
-    public LinkedHashSet<String> parentsAttributes() {
-        return parentsAttributes(this);
+    /**
+     * get the attributes of the model.
+     * It gets the required attributes if Mode.REQUIRED is provided to constructor (default)
+     * It gets the required attributes concatenated to featured attributes if in Mode.FEATURED
+     * It gets all the attributes from properties starting with required and featured attributes if in Mode.FULL
+     * <p>
+     * All duplicates are removed.
+     * </p>
+     * @return the list of attributes depending on Model's mode
+     */
+    public List<String> attributes() {
+        switch (mode) {
+            case REQUIRED -> {
+                return required();
+            }
+            case FEATURED -> {
+                return concat(required().stream(), featured().stream()).distinct().toList();
+            }
+            default -> {
+                return concat(concat(required().stream(), featured().stream()), properties().keySet().stream()).distinct().toList();
+            }
+        }
+    }
+
+    public List<String> parentsAttributes() {
+        return new LinkedList<>(parentsAttributes(this));
     }
 
     public Map<String, Object> property(String prop) {
@@ -93,6 +126,10 @@ public class Model {
 
     public List<String> required() {
         return (List<String>) description().getOrDefault("required", new ArrayList<>());
+    }
+
+    private List<String> featured() {
+        return (List<String>) description().getOrDefault("featured", new ArrayList<>());
     }
 
     public List<String> getExtends() {
@@ -138,7 +175,7 @@ public class Model {
         Optional<String> parentName = model.concreteParent();
         if (parentName.isPresent()) {
             LinkedHashSet<String> grandParentsAttributes = parentsAttributes(parents.get(parentName.get()));
-            List<String> parentAttributes = parents.get(parentName.get()).required();
+            List<String> parentAttributes = parents.get(parentName.get()).attributes();
             grandParentsAttributes.addAll(parentAttributes);
             return grandParentsAttributes;
         } else {

@@ -49,8 +49,8 @@ public class SourceGenerator {
         String inheritanceString = getInheritanceString(model);
 
         if (model.isConcrete()) {
-            List<String> parentsAttributes = new ArrayList<>(model.parentsAttributes());
-            List<String> modelAttributes = model.required().stream().filter(a -> !parentsAttributes.contains(a)).toList();
+            List<String> parentsAttributes = model.parentsAttributes();
+            List<String> modelAttributes = model.attributes().stream().filter(a -> !parentsAttributes.contains(a)).toList();
 
             String parentsStringProperties = new AttributeHandlerForSignature(model).generateFor(parentsAttributes);
             String stringProperties = new AttributeHandlerForSignature(model).generateFor(modelAttributes);
@@ -101,12 +101,12 @@ public class SourceGenerator {
     }
 
     private static String getConstructor(Model model) {
-        List<String> parentAttributes = new ArrayList<>(model.parentsAttributes());
-        List<String> required = model.required();
+        List<String> parentAttributes = model.parentsAttributes();
+        List<String> attributes = model.attributes();
         if (!parentAttributes.isEmpty()) {
-            return format("super(%s);\n", String.join(", ", parentAttributes)) + required.stream().filter(a -> !parentAttributes.contains(a)).map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
+            return format("super(%s);\n", String.join(", ", parentAttributes)) + attributes.stream().filter(a -> !parentAttributes.contains(a)).map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
         } else {
-            return required.stream().map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
+            return attributes.stream().map(a -> format("this.%s = %s;", a, a)).collect(Collectors.joining("\n"));
         }
     }
 
