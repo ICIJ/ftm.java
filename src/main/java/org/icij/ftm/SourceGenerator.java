@@ -26,7 +26,7 @@ public class SourceGenerator {
 
     private static final Map<String, String> nativeTypeMapping = Map.of(
             "number", "int",
-            "url", "Url"
+            "url", "URL"
     );
     private static final Map<String, String> jvmReservedWords = Map.of(
             "case", "caze"
