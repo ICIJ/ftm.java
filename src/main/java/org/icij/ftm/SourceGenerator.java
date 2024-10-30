@@ -47,13 +47,14 @@ public class SourceGenerator {
     public String generate(Path path) throws IOException {
         logger.info("generating java class for {} model", path.getFileName());
         Map<String, Model> parents = (Map<String, Model>) ofNullable(this.properties.get("parents")).orElse(new HashMap<>());
+        boolean interfaces = (boolean) ofNullable(this.properties.get("interfaces")).orElse(false);
         Model.Mode attributeMode = Model.Mode.valueOf((String) this.properties.getOrDefault("attributeMode", "REQUIRED"));
         Model model = new Model(Utils.getYamlContent(path.toFile()), parents, attributeMode);
 
-        String inheritanceString = getInheritanceString(model);
+        String inheritanceString = getInheritanceString(model, interfaces);
         String methods = generateMethods(model);
 
-        if (model.isConcrete()) {
+        if (model.isConcrete() && !interfaces) {
             List<String> parentsAttributes = model.parentsAttributes();
             List<String> modelAttributes = model.attributes().stream().filter(a -> !parentsAttributes.contains(a)).toList();
 
@@ -134,14 +135,18 @@ public class SourceGenerator {
         }
     }
 
-    private static String getInheritanceString(Model model) {
-        Optional<String> javaExtend = model.concreteParent();
-        List<String> implementsList = model.getImplementsList();
-        String extendsString = model.isConcrete() && javaExtend.isPresent() ? format("extends %s ", javaExtend.get()): "";
-        String implementsString = implementsList.isEmpty() ? "" : model.isConcrete() ?
-                format("implements %s ", String.join(", ", implementsList)):
-                format("extends %s ", String.join(", ", implementsList));
-        return model.getExtends().isEmpty() ? "" : extendsString + implementsString;
+    private static String getInheritanceString(Model model, boolean interfaces) {
+        if (interfaces) {
+            return model.getExtends().isEmpty() ? "": format("extends %s ", String.join(", ", model.getExtends()));
+        } else {
+            Optional<String> javaExtend = model.concreteParent();
+            List<String> implementsList = model.getImplementsList();
+            String extendsString = model.isConcrete() && javaExtend.isPresent() ? format("extends %s ", javaExtend.get()) : "";
+            String implementsString = implementsList.isEmpty() ? "" : model.isConcrete() ?
+                    format("implements %s ", String.join(", ", implementsList)) :
+                    format("extends %s ", String.join(", ", implementsList));
+            return model.getExtends().isEmpty() ? "" : extendsString + implementsString;
+        }
     }
 
     private static String concatenate(String parentsStringProperties, String stringProperties) {
@@ -154,7 +159,7 @@ public class SourceGenerator {
     }
 
     public String generateMethods(Model model) {
-        return model.attributes().stream().map(a -> format("\t%s %s();", javaType(model.type(a)), a)).collect(Collectors.joining("\n"));
+        return model.attributes().stream().map(a -> format("\t%s %s();", javaType(model.type(a)), jvmReservedWords.getOrDefault(a, a))).collect(Collectors.joining("\n"));
     }
 
     String javaType(String ftmType) {

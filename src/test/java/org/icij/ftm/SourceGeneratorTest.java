@@ -23,6 +23,12 @@ public class SourceGeneratorTest {
     }
 
     @Test
+    public void test_generate_value() throws IOException {
+        Path path = pathFromLoader("Value.yaml");
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("interfaces", true)));
+        assertThat(sourceGenerator.generate(path)).contains("public interface Value {");
+    }
+    @Test
     public void test_generate_thing() throws IOException {
         Path path = pathFromLoader("Thing.yaml");
         assertThat(new SourceGenerator().generate(path)).contains("package org.icij.ftm;");
@@ -60,6 +66,18 @@ public class SourceGeneratorTest {
         assertThat(sourceGenerator.generate(path)).contains("public CallForTenders (String name, String title, LegalEntity authority) {");
         assertThat(sourceGenerator.generate(path)).contains("this.title = title;");
         assertThat(sourceGenerator.generate(path)).contains("this.authority = authority;");
+    }
+
+    @Test
+    public void test_abstract_daughter_interface() throws IOException {
+        Path path = pathFromLoader("CallForTenders.yaml");
+        SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(of("parents", Utils.findParents(new File[] {
+                pathFromLoader("Thing.yaml").toFile(),
+                path.toFile()
+        }), "models", List.of("LegalEntity"), "interfaces", true)));
+        assertThat(sourceGenerator.generate(path)).contains("extends Thing, Interval");
+        assertThat(sourceGenerator.generate(path)).contains("String title();");
+        assertThat(sourceGenerator.generate(path)).contains("LegalEntity authority();");
     }
 
     @Test
