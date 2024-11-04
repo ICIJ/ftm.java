@@ -7,9 +7,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.fest.assertions.Assertions.assertThat;
+import static org.icij.ftm.Model.Mode.FEATURED;
+import static org.icij.ftm.Utils.propertiesFromMap;
 
 public class UtilsTest {
     @Test
@@ -25,6 +28,44 @@ public class UtilsTest {
 
         assertThat(Utils.findParents(modelFiles.toArray(new File[]{}))).hasSize(2);
         assertThat(Utils.findParents(modelFiles.toArray(new File[]{})).keySet()).contains("Interval", "Thing");
+    }
+
+    @Test
+    public void test_parse_args() {
+        assertThat(Utils.parseArgs(new String[] {"--attributeMode", "FEATURED"})).isEqualTo(propertiesFromMap(Map.of("attributeMode", "FEATURED")));
+    }
+
+    @Test
+    public void test_parse_two_args() {
+        assertThat(Utils.parseArgs(new String[] {"--attributeMode", "FEATURED", "--interfaces", "true"}))
+                .isEqualTo(propertiesFromMap(Map.of(
+                        "attributeMode", "FEATURED",
+                        "interfaces", "true"
+                )));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_parse_unknown_args() {
+        Utils.parseArgs(new String[] {"--foo", "bar"});
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_parse_missing_two_dashes() {
+        Utils.parseArgs(new String[] {"attributeMode", "bar"});
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_parse_missing_value() {
+        Utils.parseArgs(new String[] {"--interfaces"});
+    }
+
+    @Test
+    public void test_parse_help() {
+        try {
+            Utils.parseArgs(new String[]{"--help"});
+        } catch (IllegalArgumentException ex) {
+            assertThat(ex.getMessage()).isEqualTo("Help:");
+        }
     }
 
     private static List<File> getFiles(List<String> models) {

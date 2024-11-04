@@ -16,14 +16,17 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -33,6 +36,7 @@ import static java.util.stream.Collectors.toMap;
  */
 public class Utils {
     private static final Load yaml = new Load(LoadSettings.builder().build());
+
     public static Properties propertiesFromMap(Map<String, Object> map) {
         Properties props = new Properties();
         props.putAll(map);
@@ -45,7 +49,8 @@ public class Utils {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder().uri(downloadUri).build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        List<Map<String, Object>> yamlFileList = new ObjectMapper().readValue(response.body(), new TypeReference<>() {});
+        List<Map<String, Object>> yamlFileList = new ObjectMapper().readValue(response.body(), new TypeReference<>() {
+        });
 
         List<HttpRequest> requests = yamlFileList.stream()
                 .map(yamlFileDesc -> HttpRequest.newBuilder().uri(URI.create((String) yamlFileDesc.get("download_url"))))
@@ -54,8 +59,8 @@ public class Utils {
 
         // parallelize downloads
         CompletableFuture.allOf(requests.stream()
-                        .map(r -> client.sendAsync(r, HttpResponse.BodyHandlers.ofFile(tempDirectory.resolve(Path.of(r.uri().getPath()).getFileName()))))
-                        .toArray(CompletableFuture<?>[]::new)).join();
+                .map(r -> client.sendAsync(r, HttpResponse.BodyHandlers.ofFile(tempDirectory.resolve(Path.of(r.uri().getPath()).getFileName()))))
+                .toArray(CompletableFuture<?>[]::new)).join();
 
         return tempDirectory;
     }
@@ -67,7 +72,7 @@ public class Utils {
     static Map<String, Model> findParents(File[] yamlFiles, Model.Mode attributeMode) throws FileNotFoundException {
         Set<String> parentNames = new LinkedHashSet<>();
         Map<String, Map<String, Object>> modelsMap = new HashMap<>();
-        for (File file: yamlFiles) {
+        for (File file : yamlFiles) {
             Map<String, Object> yamlContent = getYamlContent(file);
             Model model = new Model(yamlContent);
             parentNames.addAll(model.getExtends());
@@ -75,7 +80,7 @@ public class Utils {
         }
         Map<String, Map<String, Object>> mapOfMap = modelsMap.entrySet().stream().filter(e -> parentNames.contains(e.getKey())).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<String, Model> parents = new HashMap<>();
-        for (Map.Entry<String, Map<String, Object>> entry: mapOfMap.entrySet()) {
+        for (Map.Entry<String, Map<String, Object>> entry : mapOfMap.entrySet()) {
             parents.put(entry.getKey(), new Model(entry.getValue(), parents, attributeMode));
         }
         return parents;
@@ -92,5 +97,29 @@ public class Utils {
 
     static Path pathFromLoader(String name) {
         return Paths.get(ClassLoader.getSystemResource(name).getPath());
+    }
+
+    public static Map<String, String> parseArgs(String[] args) {
+        List<String> argumentList = List.of("attributeMode", "interfaces", "help");
+        Scanner scanner = new Scanner(String.join(" ", args));
+        Map<String, String> properties = new HashMap<>();
+        while (scanner.hasNext()) {
+            String arg = scanner.next();
+            String argName = arg.substring(2);
+            if (arg.startsWith("--") && argumentList.contains(argName)) {
+                if ("help".equals(argName)) {
+                    throw new IllegalArgumentException("Help:");
+                }
+                if (!scanner.hasNext()) {
+                    throw new IllegalArgumentException("arg " + argName + " should have a value ");
+                }
+
+                String value = scanner.next();
+                properties.put(argName, value);
+            } else {
+                throw new IllegalArgumentException("unknown arg " + argName);
+            }
+        }
+        return properties;
     }
 }

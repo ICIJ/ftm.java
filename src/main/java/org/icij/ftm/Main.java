@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
 import static org.icij.ftm.Utils.propertiesFromMap;
 
@@ -18,26 +19,42 @@ import static org.icij.ftm.Utils.propertiesFromMap;
  */
 public class Main {
     public static final String SCHEMA_URL = "https://api.github.com/repos/alephdata/followthemoney/contents/followthemoney/schema";
+    public static final String ATTRIBUTE_MODE_KEY = "attributeMode";
+    public static final String DEFAULT_ATTRIBUTE_MODE = "FEATURED";
+    public static final String INTERFACES_KEY = "interfaces";
+    public static final String DEFAULT_INTERFACES_VALUE = "false";
 
     public static void main(String[] args) throws Exception {
         Path destDir = Path.of("target", "generated-sources", "org", "icij", "ftm");
         destDir.toFile().mkdirs();
-        Path yamlFilesDir = Utils.downloadYamlModels(URI.create(SCHEMA_URL));
-        File[] yamlFiles = Objects.requireNonNull(yamlFilesDir.toFile().listFiles());
-        Model.Mode attributeMode = Model.Mode.FEATURED;
-        Properties properties = propertiesFromMap(Map.of(
-                "parents", Utils.findParents(yamlFiles, attributeMode),
-                "models", Arrays.stream(yamlFiles).map(File::getName).map(s -> s.substring(0, s.indexOf("."))).toList(),
-                "attributeMode", attributeMode.name(),
-                "interfaces", true
-        ));
 
-        SourceGenerator sourceGenerator = new SourceGenerator(properties);
+        try {
+            Map<String, String> argsMap = Utils.parseArgs(args);
 
-        for (File yamlFile: yamlFiles) {
-            String javaSource = sourceGenerator.generate(yamlFile.toPath());
-            Files.writeString(destDir.resolve(Utils.getJavaFileName(yamlFile)), javaSource);
+            Model.Mode attributeMode = Model.Mode.valueOf(argsMap.getOrDefault(ATTRIBUTE_MODE_KEY, DEFAULT_ATTRIBUTE_MODE));
+            boolean interfaces = Boolean.parseBoolean(argsMap.getOrDefault(INTERFACES_KEY, DEFAULT_INTERFACES_VALUE));
+
+            Path yamlFilesDir = Utils.downloadYamlModels(URI.create(SCHEMA_URL));
+            File[] yamlFiles = Objects.requireNonNull(yamlFilesDir.toFile().listFiles());
+            Properties properties = propertiesFromMap(Map.of(
+                    "parents", Utils.findParents(yamlFiles, attributeMode),
+                    "models", Arrays.stream(yamlFiles).map(File::getName).map(s -> s.substring(0, s.indexOf("."))).toList(),
+                    "attributeMode", attributeMode.name(),
+                    "interfaces", interfaces
+            ));
+
+            System.out.printf("generating classes into %s for FtM with %s%n", destDir, properties);
+            SourceGenerator sourceGenerator = new SourceGenerator(properties);
+
+            for (File yamlFile: yamlFiles) {
+                String javaSource = sourceGenerator.generate(yamlFile.toPath());
+                Files.writeString(destDir.resolve(Utils.getJavaFileName(yamlFile)), javaSource);
+            }
+        } catch (IllegalArgumentException argex) {
+            System.out.println(argex.getMessage());
+            System.out.println("usage: Main <properties>");
+            System.out.printf("\t--%s: FtM properties mode (REQUIRED, FEATURED, FULL default %s)%n", ATTRIBUTE_MODE_KEY, DEFAULT_ATTRIBUTE_MODE);
+            System.out.printf("\t--%s: only generate interfaces (default %s)%n", INTERFACES_KEY, DEFAULT_INTERFACES_VALUE);
         }
     }
-
 }
