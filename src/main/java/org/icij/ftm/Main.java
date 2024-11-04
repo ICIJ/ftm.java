@@ -18,9 +18,9 @@ import static org.icij.ftm.Utils.propertiesFromMap;
 public class Main {
     public static final String SCHEMA_URL = "https://api.github.com/repos/alephdata/followthemoney/contents/followthemoney/schema";
     public static final String ATTRIBUTE_MODE_KEY = "attributeMode";
-    public static final String DEFAULT_ATTRIBUTE_MODE = "FEATURED";
+    public static final String DEFAULT_ATTRIBUTE_MODE = "FULL";
     public static final String INTERFACES_KEY = "interfaces";
-    public static final String DEFAULT_INTERFACES_VALUE = "false";
+    public static final String DEFAULT_INTERFACES_VALUE = "true";
 
     public static void main(String[] args) throws Exception {
         Path destDir = Path.of("target", "generated-sources", "org", "icij", "ftm");
