@@ -76,8 +76,8 @@ public class SourceGeneratorTest {
                 path.toFile()
         }), "models", List.of("LegalEntity"), "interfaces", true)));
         assertThat(sourceGenerator.generate(path)).contains("extends Thing, Interval");
-        assertThat(sourceGenerator.generate(path)).contains("String title();");
-        assertThat(sourceGenerator.generate(path)).contains("LegalEntity authority();");
+        assertThat(sourceGenerator.generate(path)).contains("String getTitle();");
+        assertThat(sourceGenerator.generate(path)).contains("LegalEntity getAuthority();");
     }
 
     @Test
@@ -223,8 +223,8 @@ public class SourceGeneratorTest {
     public void test_generate_methods() throws Exception {
         SourceGenerator sourceGenerator = new SourceGenerator(propertiesFromMap(Map.of("models", List.of("Folder"))));
         String code = sourceGenerator.generateMethods(new Model(getYamlContent(pathFromLoader("Document.yaml").toFile()), new HashMap<>(), Model.Mode.FEATURED));
-        assertThat(code).contains("String fileName();");
-        assertThat(code).contains("String mimeType();");
-        assertThat(code).contains("Folder parent();");
+        assertThat(code).contains("String getFileName();");
+        assertThat(code).contains("String getMimeType();");
+        assertThat(code).contains("Folder getParent();");
     }
 }

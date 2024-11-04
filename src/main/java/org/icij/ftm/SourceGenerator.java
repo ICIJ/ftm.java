@@ -159,7 +159,16 @@ public class SourceGenerator {
     }
 
     public String generateMethods(Model model) {
-        return model.attributes().stream().map(a -> format("\t%s %s();", javaType(model.type(a)), jvmReservedWords.getOrDefault(a, a))).collect(Collectors.joining("\n"));
+        return model.attributes().stream().map(a -> format("\t%s %s();", javaType(model.type(a)), getMethodName(a))).collect(Collectors.joining("\n"));
+    }
+
+    private static String getMethodName(String attr) {
+        String sanitized = jvmReservedWords.getOrDefault(attr, attr);
+        return "get" + capitalize(sanitized);
+    }
+
+    private static String capitalize(String string) {
+        return string.substring(0,1).toUpperCase() + string.substring(1);
     }
 
     String javaType(String ftmType) {
