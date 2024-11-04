@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
-import static java.lang.String.format;
-import static java.util.stream.Collectors.toMap;
 import static org.icij.ftm.Utils.propertiesFromMap;
 
 /**
