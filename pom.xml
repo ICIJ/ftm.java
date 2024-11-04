@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>ftm.java</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
     <groupId>org.icij</groupId>
     <packaging>jar</packaging>
     <name>ICIJ FtM Java models</name>
